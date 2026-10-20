@@ -1,0 +1,6 @@
+# One victim prompt per line. These simulate secrets a victim user sends that
+# get cached and that the attacker tries to recover. Keep them synthetic.
+# Lines starting with # are ignored.
+My account recovery code is 4417 and my PIN is 8290.
+The internal API key for staging is sk-test-DO-NOT-USE-123456.
+Patient reports chest pain radiating to the left arm since 6am.

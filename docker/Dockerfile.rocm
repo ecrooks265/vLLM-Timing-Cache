@@ -1,0 +1,53 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# vLLM for AMD Radeon RX 7900 XTX (gfx1100 / RDNA3), WSL2-aware.
+#
+# Uses AMD's PREBUILT consumer-RDNA3 ("navi") image — vLLM, PyTorch and ROCm are
+# already compiled for gfx1100, so there is NO source build. This replaces the
+# old from-source Dockerfile (kept as Dockerfile.rocm.sourcebuild.bak) because
+# AMD now ships navi images; the "gfx942-only" note in older docs is outdated.
+#
+# Build:   docker compose -f docker/docker-compose.rocm.yml build
+# Swap the base: set BASE_IMAGE in docker-compose.rocm.yml (navi tags only).
+#   tags: https://hub.docker.com/r/rocm/vllm-dev/tags  (filter: navi)
+# ─────────────────────────────────────────────────────────────────────────────
+ARG BASE_IMAGE=rocm/vllm-dev:rocm6.4.2_navi_ubuntu22.04_py3.10_pytorch_2.7_vllm_0.9.2
+FROM ${BASE_IMAGE}
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Harness needs pyyaml to parse the config in serve.sh; client deps for parity.
+RUN pip install --no-cache-dir "pyyaml>=6.0" "openai>=1.40.0" "httpx>=0.27.0" "requests>=2.32.0"
+
+# ── WSL fix: vLLM's ROCm platform probe calls amdsmi, which fails under WSL
+# (no /dev/kfd; amdsmi "Error code: 34") and aborts with
+# "RuntimeError: Device string must not be empty". Force RocmPlatform when
+# torch reports a HIP build. Guarded + idempotent: only rewrites if the marker
+# string is present, so it is a no-op on images that already handle WSL.
+RUN python - <<'PY' || true
+import importlib.util, re, pathlib
+spec = importlib.util.find_spec("vllm.platforms")
+p = pathlib.Path(spec.origin)
+src = p.read_text()
+if "CACHELAB_WSL_PATCH" not in src and "def rocm_platform_plugin" in src:
+    inject = (
+        "    # CACHELAB_WSL_PATCH: trust torch HIP under WSL (amdsmi fails there)\n"
+        "    try:\n"
+        "        import torch\n"
+        "        if getattr(torch.version, 'hip', None) and torch.cuda.is_available() \\\n"
+        "           and torch.cuda.device_count() > 0:\n"
+        "            return 'vllm.platforms.rocm.RocmPlatform'\n"
+        "    except Exception:\n"
+        "        pass\n"
+    )
+    src = re.sub(r"(def rocm_platform_plugin\([^)]*\)[^\n]*:\n)", r"\1" + inject, src, count=1)
+    p.write_text(src)
+    print("[cachelab] applied WSL rocm platform patch to", p)
+else:
+    print("[cachelab] WSL patch not needed / already present")
+PY
+
+COPY docker/serve.sh /usr/local/bin/serve.sh
+RUN chmod +x /usr/local/bin/serve.sh
+
+EXPOSE 8000
+ENTRYPOINT ["/usr/local/bin/serve.sh"]

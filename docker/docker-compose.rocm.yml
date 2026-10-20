@@ -1,0 +1,68 @@
+# vLLM-on-ROCm server for cache-timing-lab — AMD Radeon RX 7900 XTX (gfx1100).
+# PRE-CONFIGURED FOR WSL2 (Windows host). Uses AMD's prebuilt "navi" vLLM image
+# (no source build). Run from INSIDE the Ubuntu WSL2 distro with the NATIVE
+# docker engine (not Docker Desktop — its engine can't pass /dev/dxg reliably).
+#
+#   cp .env.example .env   &&   edit .env (HF_TOKEN=...)
+#   docker compose -f docker/docker-compose.rocm.yml up --build
+#   # ready when: curl http://127.0.0.1:8000/health  -> 200
+services:
+  vllm:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.rocm
+      args:
+        # Consumer-RDNA3 image. Swap only for another *navi* tag if GPU init
+        # fails under WSL (e.g. try a rocm7 navi tag to match the host driver).
+        # tags: https://hub.docker.com/r/rocm/vllm-dev/tags
+        BASE_IMAGE: rocm/vllm-dev:rocm6.4.2_navi_ubuntu22.04_py3.10_pytorch_2.7_vllm_0.9.2
+    image: cachelab-vllm:rocm-navi
+    container_name: cachelab-vllm
+
+    # --- AMD GPU passthrough (WSL2) ------------------------------------------
+    # WSL exposes the GPU as /dev/dxg plus the runtime under /usr/lib/wsl/lib.
+    # BARE-METAL LINUX instead: comment /dev/dxg + the wsl lib mount, and
+    # uncomment /dev/kfd + /dev/dri.
+    devices:
+      - /dev/dxg
+      # - /dev/kfd      # bare-metal Linux only
+      # - /dev/dri      # bare-metal Linux only
+    group_add:
+      - "44"     # video (host GID; numeric so it needn't exist in the image)
+      - "110"    # render (host GID)
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp=unconfined
+    ipc: host
+
+    ports:
+      - "127.0.0.1:8000:8000"
+
+    environment:
+      VLLM_USE_TRITON_FLASH_ATTN: "1"    # gfx1100: no CK FA, use Triton path
+      HSA_OVERRIDE_GFX_VERSION: "11.0.0" # RDNA3 target hint
+      HIP_VISIBLE_DEVICES: "0"
+      # Prepend WSL runtime libs so the container's ROCm finds libdxcore.
+      LD_LIBRARY_PATH: "/usr/lib/wsl/lib:${LD_LIBRARY_PATH:-}"
+      HF_TOKEN: "${HF_TOKEN:-}"
+      HUGGING_FACE_HUB_TOKEN: "${HF_TOKEN:-}"
+      CONFIG: "${CACHELAB_CONFIG:-/workspace/config/rocm_7900xtx.yaml}"
+
+    volumes:
+      - ..:/workspace:rw
+      - "${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface:rw"
+      - /usr/lib/wsl/lib:/usr/lib/wsl/lib:ro   # WSL GPU runtime (dxcore)
+      # WSL fix: replace the container's bare-metal HSA runtime (talks to
+      # /dev/kfd, absent on WSL) with the host's WSL-aware one (talks to
+      # /dev/dxg via libdxcore). Host ROCm is 7.2; soname .1 ABI is stable.
+      - /opt/rocm/lib/libhsa-runtime64.so.1:/opt/rocm/lib/libhsa-runtime64.so.1:ro
+
+    working_dir: /workspace
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "curl -fsS http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 60
+      start_period: 300s
+    restart: "no"

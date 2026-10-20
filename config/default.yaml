@@ -1,0 +1,59 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# cache-timing-lab configuration
+# Every tunable lives here so experiments are reproducible from one file.
+# ─────────────────────────────────────────────────────────────────────────────
+
+model:
+  # EarlyBird reproduction target. Same model family proven globally vulnerable
+  # on Fireworks / Perplexity / Replicate in the audit paper.
+  name: "meta-llama/Llama-3.1-8B-Instruct"
+  dtype: "bfloat16"
+  max_model_len: 4096
+
+server:
+  host: "127.0.0.1"
+  port: 8000
+  # block_size=1 is REQUIRED for token-by-token EarlyBird recovery.
+  # Later experiments can set 16 to measure the default-mitigation effect.
+  block_size: 1
+  enable_prefix_caching: true
+  enforce_eager: true            # removes CUDA-graph jitter from timing
+  gpu_memory_utilization: 0.90
+  # When true, the launcher exposes vLLM's /metrics endpoint for ground truth.
+  expose_metrics: true
+
+timing:
+  num_samples: 250               # matches the audit paper's NUMSAMPLES
+  num_warmup: 10                 # discard first N (JIT / allocator warmup)
+  timing_source: "both"          # "client" | "server" | "both"
+  # Inter-request sleep (s) to avoid batching unrelated requests together,
+  # which would contaminate the per-request TTFT signal.
+  inter_request_delay: 0.05
+
+cache_levels:
+  # Which sharing regimes to audit. per-org intentionally omitted.
+  - "per_user"
+  - "global"
+
+attack:
+  # EarlyBird token-by-token recovery
+  prefix_fraction: 0.95          # fraction of victim prompt treated as known prefix
+  max_tokens_to_recover: 32      # cap recovery length for a bounded run
+  beam_width: 1                  # 1 = greedy; >1 explores top candidates
+  candidate_vocab: "ascii"       # "ascii" | "full" | path to a token list
+  victim_prompt_file: "config/victim_prompts.txt"
+
+stats:
+  ks_alpha: 1.0e-8               # significance threshold from the paper
+  precision_target: 0.70        # success bar (paper reported 0.71–0.90)
+
+external:
+  # Disabled by default. Only used with --allow-external AND authorization.
+  enabled: false
+  provider: null                 # "fireworks" | "perplexity"
+  base_url: null
+  # API key is read from env (see .env.example), never stored here.
+
+run:
+  out_dir: "runs"                # per-run subdir with timestamp is created
+  seed: 1337

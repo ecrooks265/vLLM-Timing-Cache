@@ -1,0 +1,53 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# vLLM built from source for AMD Radeon RX 7900 XTX (gfx1100 / RDNA3).
+#
+# Why a source build: the prebuilt `rocm/vllm` images are compiled for datacenter
+# archs (gfx942 etc.) and do NOT ship gfx1100 kernels. HSA_OVERRIDE_GFX_VERSION
+# cannot synthesize kernels that were never compiled, so for a 7900 XTX you build
+# vLLM with PYTORCH_ROCM_ARCH=gfx1100. CK FlashAttention has no gfx1100 target, so
+# we build with BUILD_FA=0 and use the Triton FA path at runtime.
+#
+# Build (from the repo root):
+#   docker build -f docker/Dockerfile.rocm \
+#       --build-arg VLLM_REF=v0.15.0 \
+#       -t cachelab-vllm:rocm .
+# or just:  docker compose -f docker/docker-compose.rocm.yml build
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ROCm PyTorch base. Pin a tag that matches the ROCm you have on the host.
+# `rocm-smi --version` on the host should be >= the ROCm in this image.
+# Browse tags: https://hub.docker.com/r/rocm/pytorch/tags
+ARG BASE_IMAGE=rocm/pytorch:rocm6.3.1_ubuntu22.04_py3.10_pytorch_release_2.4.0
+FROM ${BASE_IMAGE}
+
+# Which vLLM tag to build. v0.15.0 / v0.16.0 are known-good on gfx1100.
+ARG VLLM_REF=v0.15.0
+
+ENV PYTORCH_ROCM_ARCH=gfx1100 \
+    VLLM_TARGET_DEVICE=rocm \
+    BUILD_FA=0 \
+    DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update -y && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt
+RUN git clone https://github.com/vllm-project/vllm.git && \
+    cd vllm && git checkout "${VLLM_REF}"
+
+WORKDIR /opt/vllm
+# Keep the ROCm torch that ships in the base image (don't let vLLM pull a CUDA torch).
+RUN python use_existing_torch.py || true
+# requirements path moved between versions; try both.
+RUN pip install -r requirements/rocm.txt 2>/dev/null || \
+    pip install -r requirements-rocm.txt 2>/dev/null || true
+RUN pip install -e . --no-build-isolation
+
+# Harness client deps (the measurement code imports these; vLLM provides the rest).
+RUN pip install "openai>=1.40.0" "httpx>=0.27.0" "requests>=2.32.0" "pyyaml>=6.0"
+
+# Config-driven launcher (reads the mounted YAML and execs the server).
+COPY docker/serve.sh /usr/local/bin/serve.sh
+RUN chmod +x /usr/local/bin/serve.sh
+
+EXPOSE 8000
+ENTRYPOINT ["/usr/local/bin/serve.sh"]

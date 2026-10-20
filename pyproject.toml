@@ -1,0 +1,12 @@
+[project]
+name = "cache-timing-lab"
+version = "0.1.0"
+description = "White-box testbed for LLM prompt-cache timing side channels"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

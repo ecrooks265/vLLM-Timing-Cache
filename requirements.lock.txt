@@ -1,0 +1,18 @@
+# Pinned harness (client) dependencies — generated 2026-10-20.
+# Resolved in a clean CPython venv with compatible upper bounds (openai 1.x,
+# pydantic 2.x, pandas 2.x) so the lock matches the code as written.
+# Reproducible install:  pip install -r requirements.lock.txt
+# The vLLM SERVER version is pinned separately by the Docker image tag in
+# docs/VERSIONS.md (rocm/vllm-dev ... vllm 0.9.3.dev2), not here.
+openai==1.109.1
+httpx==0.28.1
+requests==2.34.2
+numpy==2.5.4
+scipy==1.18.1
+pandas==2.3.3
+matplotlib==3.11.2
+PyYAML==6.0.3
+pydantic==2.14.1
+python-dotenv==1.2.4
+tqdm==4.70.1
+pytest==8.4.2

@@ -1,0 +1,35 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+
+# Secrets / local env (keep the example tracked)
+.env
+.env.*
+!.env.example
+
+# Run artifacts (baseline run is force-added; see docs/PLAN.md)
+runs/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Binary installers / build artifacts
+*.deb
+*.whl
+
+# Model weights / large data (should never live in the repo)
+*.safetensors
+*.gguf
+*.bin
+*.pt
+*.pth
+.cache/
+hf_home/

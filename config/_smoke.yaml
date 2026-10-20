@@ -1,0 +1,62 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# cache-timing-lab configuration — AMD Radeon RX 7900 XTX (gfx1100, RDNA3, 24GB)
+# Modern-vLLM / ROCm profile. Server runs in a Docker container (see docker/).
+#
+# Differences from config/default.yaml (the GCP/NVIDIA + pinned-0.6.x profile):
+#   * block_size: 16   — the ROCm paged-attention path wants 16; the V1 engine
+#                        dropped block_size=1. See scripts/probe_block_size.py
+#                        and README "EarlyBird on ROCm" before changing this.
+#   * gpu_memory_utilization trimmed to leave headroom on a 24GB consumer card.
+#   * timing knobs unchanged — they are backend-agnostic.
+# ─────────────────────────────────────────────────────────────────────────────
+
+model:
+  name: "Qwen/Qwen2.5-0.5B-Instruct"
+  dtype: "bfloat16"            # RDNA3 supports bf16 natively
+  max_model_len: 4096
+
+server:
+  host: "127.0.0.1"
+  port: 8000
+  # block_size=16 is the reliable value on ROCm V1. block_size=1 (ideal for
+  # token-by-token EarlyBird recovery) is NOT guaranteed on gfx1100 — run
+  #   python scripts/probe_block_size.py --config config/rocm_7900xtx.yaml
+  # to test your kernel before relying on it. If the probe fails, Exp 01 and the
+  # audit still work at 16; Exp 02 recovery becomes block-granular.
+  block_size: 16
+  enable_prefix_caching: true
+  enforce_eager: true          # removes HIP-graph jitter from TTFT timing
+  # 0.90 * 24GB ≈ 21.6GB. Llama-3.1-8B bf16 weights ≈ 16GB, leaving ~5GB KV.
+  # Drop to 0.85 if you see HIP OOM during warmup.
+  gpu_memory_utilization: 0.60
+  expose_metrics: true
+
+timing:
+  num_samples: 250             # matches the audit paper's NUMSAMPLES
+  num_warmup: 10
+  timing_source: "client"
+  inter_request_delay: 0.05
+
+cache_levels:
+  - "per_user"
+  - "global"
+
+attack:
+  prefix_fraction: 0.95
+  max_tokens_to_recover: 32
+  beam_width: 1
+  candidate_vocab: "ascii"
+  victim_prompt_file: "config/victim_prompts.txt"
+
+stats:
+  ks_alpha: 1.0e-8
+  precision_target: 0.70
+
+external:
+  enabled: false
+  provider: null
+  base_url: null
+
+run:
+  out_dir: "runs"
+  seed: 1337

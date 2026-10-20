@@ -1,0 +1,35 @@
+{
+  "audit": {
+    "per_user": [
+      {
+        "cache_level": "per_user",
+        "timing_source": "client",
+        "ks_statistic": 1.0,
+        "ks_pvalue": 2.1927812846103578e-74,
+        "ks_significant": true,
+        "average_precision": 1.0,
+        "best_precision": 1.0,
+        "best_recall": 1.0,
+        "best_f1": 1.0,
+        "n_samples": 250,
+        "success": true
+      }
+    ],
+    "global": [
+      {
+        "cache_level": "global",
+        "timing_source": "client",
+        "ks_statistic": 0.992,
+        "ks_pvalue": 5.481953211525894e-72,
+        "ks_significant": true,
+        "average_precision": 0.999872507936508,
+        "best_precision": 0.9920634920634921,
+        "best_recall": 1.0,
+        "best_f1": 0.9960159362549801,
+        "n_samples": 250,
+        "success": true
+      }
+    ]
+  },
+  "recovery": {}
+}

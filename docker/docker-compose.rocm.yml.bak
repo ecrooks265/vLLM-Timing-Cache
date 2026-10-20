@@ -1,0 +1,74 @@
+# vLLM-on-ROCm server for the cache-timing-lab, targeting a Radeon RX 7900 XTX.
+#
+#   cp .env.example .env   &&   edit .env (HF_TOKEN=...)
+#   docker compose -f docker/docker-compose.rocm.yml up --build
+#
+# First build compiles vLLM for gfx1100 and takes a while. The server is ready
+# when GET http://127.0.0.1:8000/health returns 200.
+services:
+  vllm:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.rocm
+      args:
+        # Match these to your host. See docker/Dockerfile.rocm for tag guidance.
+        BASE_IMAGE: rocm/pytorch:rocm6.3.1_ubuntu22.04_py3.10_pytorch_release_2.4.0
+        VLLM_REF: v0.15.0
+    image: cachelab-vllm:rocm
+    container_name: cachelab-vllm
+
+    # --- AMD GPU passthrough --------------------------------------------------
+    # PRE-CONFIGURED FOR WSL2 (Windows host) — the 7900 XTX path. WSL2 exposes the
+    # GPU as /dev/dxg plus the runtime mounted from /usr/lib/wsl/lib (see volumes).
+    # Run `docker compose` from INSIDE the WSL2 distro, not Docker Desktop's
+    # default context.
+    #
+    # BARE-METAL LINUX host (dual-boot Ubuntu, etc.) instead: comment /dev/dxg
+    # below, uncomment /dev/kfd + /dev/dri, and comment the /usr/lib/wsl/lib mount.
+    devices:
+      - /dev/dxg
+      # - /dev/kfd      # bare-metal Linux only
+      # - /dev/dri      # bare-metal Linux only
+    group_add:
+      - video
+      - render
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp=unconfined
+    ipc: host
+
+    # Expose the server + /metrics on the host loopback the harness expects.
+    ports:
+      - "127.0.0.1:8000:8000"
+
+    environment:
+      # gfx1100: no CK FlashAttention, so force the Triton FA path.
+      VLLM_USE_TRITON_FLASH_ATTN: "1"
+      # Helps some ROCm libs resolve the RDNA3 target. Harmless if unused.
+      HSA_OVERRIDE_GFX_VERSION: "11.0.0"
+      HIP_VISIBLE_DEVICES: "0"
+      PYTORCH_ROCM_ARCH: "gfx1100"
+      # Gated Llama weights. Set in .env (never commit the real token).
+      HF_TOKEN: "${HF_TOKEN:-}"
+      HUGGING_FACE_HUB_TOKEN: "${HF_TOKEN:-}"
+      # Which config profile the launcher reads.
+      CONFIG: "/workspace/config/rocm_7900xtx.yaml"
+
+    volumes:
+      # Mount the repo so serve.sh can read config/ (and you can edit it live).
+      - ..:/workspace:rw
+      # Persist the HF model cache across container restarts.
+      - "${HF_HOME:-~/.cache/huggingface}:/root/.cache/huggingface:rw"
+      # WSL2 GPU runtime (comment out on a bare-metal Linux host).
+      - /usr/lib/wsl/lib:/usr/lib/wsl/lib:ro
+
+    working_dir: /workspace
+    # Give the model time to download + load on first run.
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "curl -fsS http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 40
+      start_period: 300s
+    restart: "no"

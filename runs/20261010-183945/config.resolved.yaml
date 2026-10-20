@@ -1,0 +1,37 @@
+model:
+  name: Qwen/Qwen2.5-0.5B-Instruct
+  dtype: bfloat16
+  max_model_len: 4096
+server:
+  host: 127.0.0.1
+  port: 8000
+  block_size: 16
+  enable_prefix_caching: true
+  enforce_eager: true
+  gpu_memory_utilization: 0.6
+  expose_metrics: true
+timing:
+  num_samples: 250
+  num_warmup: 10
+  timing_source: client
+  inter_request_delay: 0.05
+attack:
+  prefix_fraction: 0.95
+  max_tokens_to_recover: 32
+  beam_width: 1
+  candidate_vocab: ascii
+  victim_prompt_file: config/victim_prompts.txt
+  prompt_min_words: 120
+stats:
+  ks_alpha: 1.0e-08
+  precision_target: 0.7
+external:
+  enabled: false
+  provider: null
+  base_url: null
+run:
+  out_dir: runs
+  seed: 1337
+cache_levels:
+- per_user
+- global
