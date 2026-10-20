@@ -35,7 +35,7 @@ if [[ "$MODE" == "docker" ]]; then
   echo "[*] bringing up vLLM on ROCm via $COMPOSE (config: $CONFIG)"
   echo "[*] first build compiles vLLM for gfx1100 — this takes a while."
   echo "[*] health: http://127.0.0.1:8000/health   metrics: http://127.0.0.1:8000/metrics"
-  CONFIG="/workspace/${CONFIG}" docker compose -f "$COMPOSE" up $BUILD_FLAG
+  CACHELAB_CONFIG="/workspace/${CONFIG}" docker compose -f "$COMPOSE" up $BUILD_FLAG
   exit 0
 fi
 
