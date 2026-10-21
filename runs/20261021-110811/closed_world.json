@@ -1,0 +1,22 @@
+{
+  "experiment": "13_closed_world",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "results": {
+    "distinct (different documents)": {
+      "accuracy": 1.0,
+      "chance": 0.125,
+      "gap_ms": 8.722,
+      "M": 8,
+      "trials": 20,
+      "succeeds": true
+    },
+    "field (shared template, short secret)": {
+      "accuracy": 1.0,
+      "chance": 0.125,
+      "gap_ms": 5.437,
+      "M": 8,
+      "trials": 20,
+      "succeeds": true
+    }
+  }
+}
