@@ -45,26 +45,32 @@ class TimingClient:
         user: Optional[str] = None,
         extra_headers: Optional[dict] = None,
         cache_salt: Optional[str] = None,
+        chat: bool = False,
     ) -> TTFTMeasurement:
         """Send one streaming completion and measure TTFT.
 
         max_tokens=1 is enough: we only need the first token to time the cache
         effect, and short outputs keep runs cheap.
         """
-        url = f"{self.base_url}/completions"
+        url = f"{self.base_url}/chat/completions" if chat else f"{self.base_url}/completions"
         headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
         if extra_headers:
             headers.update(extra_headers)
 
         payload = {
             "model": model,
-            "prompt": prompt,
             "max_tokens": max_tokens,
             "temperature": 0.0,
             "stream": True,
             # include usage so some servers return server-side timing/cached tokens
             "stream_options": {"include_usage": True},
         }
+        # vLLM honors cache_salt on the chat endpoint only (not /completions), so
+        # salting/defense runs must use chat=True for the salt to enter the cache key.
+        if chat:
+            payload["messages"] = [{"role": "user", "content": prompt}]
+        else:
+            payload["prompt"] = prompt
         if user is not None:
             payload["user"] = user      # distinguishes per-user vs global cache tests
         if cache_salt is not None:

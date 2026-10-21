@@ -20,17 +20,17 @@ def collect(cfg, client, base, vsalt, asalt):
     for i in range(n + warmup):
         warm = i < warmup
         hit_prompt = f"{uuid.uuid4().hex} {base}"
-        client.measure(cfg.model.name, hit_prompt, max_tokens=1, user="victim_user", cache_salt=vsalt)
+        client.measure(cfg.model.name, hit_prompt, max_tokens=1, user="victim_user", cache_salt=vsalt, chat=True)
         time.sleep(delay)
         with labeled_request(cfg) as box:
-            m = client.measure(cfg.model.name, hit_prompt, max_tokens=1, user="attacker_user", cache_salt=asalt)
+            m = client.measure(cfg.model.name, hit_prompt, max_tokens=1, user="attacker_user", cache_salt=asalt, chat=True)
         gt = box[0].hit if box[0] else None
         time.sleep(delay)
         if not warm and m.ok and m.client_ttft is not None:
             hit.append(m.client_ttft)
             if gt is not None: gt_on_hit.append(1 if gt else 0)
         miss_prompt = f"{uuid.uuid4().hex} {base}"
-        m2 = client.measure(cfg.model.name, miss_prompt, max_tokens=1, user="attacker_user", cache_salt=asalt)
+        m2 = client.measure(cfg.model.name, miss_prompt, max_tokens=1, user="attacker_user", cache_salt=asalt, chat=True)
         time.sleep(delay)
         if not warm and m2.ok and m2.client_ttft is not None:
             miss.append(m2.client_ttft)

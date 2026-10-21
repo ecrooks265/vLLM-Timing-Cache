@@ -17,14 +17,14 @@ def collect(cfg, client, base, vsalt, asalt):
     for i in range(n + warmup):
         warm = i < warmup
         hp = f"{uuid.uuid4().hex} {base}"
-        client.measure(cfg.model.name, hp, max_tokens=1, user="victim_user", cache_salt=vsalt); time.sleep(delay)
+        client.measure(cfg.model.name, hp, max_tokens=1, user="victim_user", cache_salt=vsalt, chat=True); time.sleep(delay)
         with labeled_request(cfg) as box:
-            m = client.measure(cfg.model.name, hp, max_tokens=1, user="attacker_user", cache_salt=asalt)
+            m = client.measure(cfg.model.name, hp, max_tokens=1, user="attacker_user", cache_salt=asalt, chat=True)
         gt = box[0].hit if box[0] else None; time.sleep(delay)
         if not warm and m.ok and m.client_ttft is not None:
             hit.append(m.client_ttft)
             if gt is not None: gt_on_hit.append(1 if gt else 0)
-        m2 = client.measure(cfg.model.name, f"{uuid.uuid4().hex} {base}", max_tokens=1, user="attacker_user", cache_salt=asalt); time.sleep(delay)
+        m2 = client.measure(cfg.model.name, f"{uuid.uuid4().hex} {base}", max_tokens=1, user="attacker_user", cache_salt=asalt, chat=True); time.sleep(delay)
         if not warm and m2.ok and m2.client_ttft is not None: miss.append(m2.client_ttft)
     return hit, miss, gt_on_hit
 
@@ -62,8 +62,11 @@ def main() -> int:
         print(f"    {'condition':<34}{'gt_hit':>8}{'AP':>8}{'KS p':>12}   verdict")
         for label, gt_rate, ap, ksp, won in rows:
             print(f"    {label:<34}{gt_rate:>8.2f}{ap:>8.3f}{ksp:>12.2e}   {'ATTACK SUCCEEDS' if won else 'DEFEATED'}")
-        print("\n    Reading: salting defeats the attack ONLY at per-session granularity.")
-        print("    A shared/coarse salt (kept for cache efficiency) leaves the channel open.")
+        _defeated = [r[0] for r in rows if not r[4]]
+        _succeeded = [r[0] for r in rows if r[4]]
+        print(f"\n    Reading (from DATA, not hardcoded):")
+        print(f"      attack DEFEATED in: {_defeated or 'none'}")
+        print(f"      attack SUCCEEDS in: {_succeeded or 'none'}")
         save_json({"experiment": "06_salt_granularity", "model": cfg.model.name,
                    "prompt_min_words": cfg.attack.prompt_min_words, "conditions": jrows},
                   run_dir / "salt_granularity.json")
