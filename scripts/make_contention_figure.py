@@ -56,10 +56,15 @@ def plot_idle_vs_busy(d):
 
 
 def plot_sweep(d):
-    rows = d["rows"]
-    xs = [r["victim_words"] for r in rows]
-    dy = [r["delta_ms"] for r in rows]
-    au = [r["auc"] for r in rows]
+    # keep only points where the victim actually sustained load; a skipped or
+    # degenerate size (prompt > ctx -> all 400s -> no load) is not a channel point.
+    valid = [r for r in d["rows"]
+             if r.get("delta_ms") is not None and r.get("load_ok", True)]
+    skipped = [r for r in d["rows"]
+               if r.get("delta_ms") is None or not r.get("load_ok", True)]
+    xs = [r["victim_words"] for r in valid]
+    dy = [r["delta_ms"] for r in valid]
+    au = [r["auc"] for r in valid]
     fig, ax1 = plt.subplots(figsize=(7, 4.2))
     ax1.plot(xs, dy, "o-", color="#e34a33", lw=2, label="Δ probe median (ms)")
     ax1.set_xlabel("victim prompt length (words)")
@@ -72,8 +77,12 @@ def plot_sweep(d):
     ax2.set_ylabel("AUC P(busy>idle)", color="#2b8cbe")
     ax2.set_ylim(0.4, 1.0)
     ax2.tick_params(axis="y", labelcolor="#2b8cbe")
+    sub = ""
+    if skipped:
+        ws = ", ".join(str(r["victim_words"]) for r in skipped)
+        sub = f"\n(excluded {ws} words: prompt > ctx, victim rejected -> no load)"
     ax1.set_title("Exp 15 — dose-response: victim workload size leaks via probe latency\n"
-                  f"(baseline idle median {d['baseline_ms']:.1f} ms, {d['victims']} victims)")
+                  f"(baseline idle median {d['baseline_ms']:.1f} ms, {d['victims']} victims)" + sub)
     fig.tight_layout()
     out = DOCS / "contention_sweep.png"
     fig.savefig(out, dpi=150)

@@ -90,6 +90,18 @@ def victim_prompt(words: int) -> str:
     return " ".join(base[:words])
 
 
+# shuffled lorem tokenizes at ~1.5 tokens/word on the Qwen2.5 tokenizer; plus the
+# chat template wrapper. If a victim prompt exceeds the server's max_model_len it
+# is rejected (400), the victim generates NO load, and the probe falls back to
+# baseline -- a dip that must never be read as a channel limit. Guard against it.
+def est_tokens(words: int) -> int:
+    return int(words * 1.5) + 32  # +chat template overhead
+
+
+def within_ctx(words: int, ctx: int) -> bool:
+    return est_tokens(words) <= ctx - 64  # leave headroom for the template
+
+
 # --------------------------------------------------------------------------- #
 # Timing primitive: TTFT via streaming, unique salt every call
 # --------------------------------------------------------------------------- #
@@ -135,6 +147,8 @@ class Victim:
         self._stop = threading.Event()
         self._threads: list[threading.Thread] = []
         self.sent = 0
+        self.errors = 0
+        self.last_error = ""
         self._lock = threading.Lock()
 
     def _worker(self):
@@ -143,8 +157,15 @@ class Victim:
                 measure_ttft(victim_prompt(self.words), max_tokens=1, timeout=120)
                 with self._lock:
                     self.sent += 1
-            except Exception:
+            except Exception as e:
+                with self._lock:
+                    self.errors += 1
+                    self.last_error = str(e)[:200]
                 time.sleep(0.05)
+
+    def load_ok(self) -> bool:
+        """True if the victim actually sustained load (vs e.g. prompt > ctx -> all 4xx)."""
+        return self.sent > 0 and self.sent >= self.errors
 
     def __enter__(self):
         for _ in range(self.n_threads):
@@ -248,8 +269,12 @@ def run_idle_vs_busy(n, warmup, victim_words, victims):
           file=sys.stderr)
     with Victim(victim_words, victims) as v:
         busy = collect_probes(n, warmup, "busy")
-        sent = v.sent
-    print(f"   victim sent ~{sent} large prefills during BUSY", file=sys.stderr)
+        sent, errors, ok, err = v.sent, v.errors, v.load_ok(), v.last_error
+    print(f"   victim sent ~{sent} large prefills during BUSY ({errors} errors)", file=sys.stderr)
+    if not ok:
+        print(f"   WARNING: victim load degenerate ({errors} errs: {err}); "
+              f"prompt may exceed max_model_len -> result is NOT a channel measurement.",
+              file=sys.stderr)
 
     s_idle = summarize("idle", idle)
     s_busy = summarize("busy", busy)
@@ -274,6 +299,8 @@ def run_idle_vs_busy(n, warmup, victim_words, victims):
         "victim_words": victim_words,
         "victims": victims,
         "victim_sent": sent,
+        "victim_errors": errors,
+        "load_ok": ok,
         "idle": s_idle,
         "busy": s_busy,
         "delta_ms": delta,
@@ -287,22 +314,36 @@ def run_idle_vs_busy(n, warmup, victim_words, victims):
     }
 
 
-def run_sweep(n, warmup, victims, sizes):
-    print(f"== SWEEP victim prompt size, {victims} threads ==", file=sys.stderr)
+def run_sweep(n, warmup, victims, sizes, ctx):
+    print(f"== SWEEP victim prompt size, {victims} threads (ctx={ctx}) ==", file=sys.stderr)
     rows = []
     # idle baseline
     idle = collect_probes(n, warmup, "idle")
     base = statistics.median(idle) * 1e3
-    rows.append({"victim_words": 0, "median_ms": base, "delta_ms": 0.0, "auc": 0.5})
+    rows.append({"victim_words": 0, "median_ms": base, "delta_ms": 0.0, "auc": 0.5,
+                 "victim_sent": 0, "victim_errors": 0, "load_ok": True})
     print(f"  idle baseline median {base:.2f} ms")
     for w in sizes:
-        with Victim(w, victims):
+        if not within_ctx(w, ctx):
+            print(f"  victim {w:5d} words ~{est_tokens(w)} tok > ctx {ctx}: SKIP "
+                  f"(would be rejected -> no load, false dip). Raise --ctx / max_model_len to test.",
+                  file=sys.stderr)
+            rows.append({"victim_words": w, "median_ms": None, "delta_ms": None, "auc": None,
+                         "victim_sent": 0, "victim_errors": 0, "load_ok": False,
+                         "note": f"skipped: ~{est_tokens(w)} tok exceeds ctx {ctx}"})
+            continue
+        with Victim(w, victims) as v:
             busy = collect_probes(n, warmup, f"busy{w}")
+            sent, errors, ok, err = v.sent, v.errors, v.load_ok(), v.last_error
         med = statistics.median(busy) * 1e3
         auc = auc_greater(busy, idle)
-        rows.append({"victim_words": w, "median_ms": med, "delta_ms": med - base, "auc": auc})
-        print(f"  victim {w:5d} words -> probe median {med:7.2f} ms  (+{med - base:6.2f})  AUC {auc:.3f}")
-    return {"mode": "sweep", "model": MODEL, "victims": victims, "baseline_ms": base, "rows": rows}
+        rows.append({"victim_words": w, "median_ms": med, "delta_ms": med - base, "auc": auc,
+                     "victim_sent": sent, "victim_errors": errors, "load_ok": ok})
+        flag = "" if ok else f"  <-- DEGENERATE: victim load failed ({errors} errs: {err})"
+        print(f"  victim {w:5d} words -> probe median {med:7.2f} ms  (+{med - base:6.2f})  "
+              f"AUC {auc:.3f}  [sent {sent}, err {errors}]{flag}")
+    return {"mode": "sweep", "model": MODEL, "victims": victims, "ctx": ctx,
+            "baseline_ms": base, "rows": rows}
 
 
 # --------------------------------------------------------------------------- #
@@ -313,7 +354,10 @@ def main():
     ap.add_argument("--victim-words", type=int, default=1500)
     ap.add_argument("--victims", type=int, default=3, help="concurrent victim threads")
     ap.add_argument("--sweep", action="store_true")
-    ap.add_argument("--sizes", type=int, nargs="+", default=[200, 500, 1000, 2000, 4000])
+    ap.add_argument("--sizes", type=int, nargs="+",
+                    default=[200, 500, 1000, 1500, 2000, 2500, 4000])
+    ap.add_argument("--ctx", type=int, default=4096,
+                    help="server max_model_len; victim sizes over this are skipped (they'd 400)")
     ap.add_argument("--out", default="runs/batching_contention.json")
     args = ap.parse_args()
 
@@ -325,7 +369,7 @@ def main():
         sys.exit(1)
 
     if args.sweep:
-        result = run_sweep(args.n, args.warmup, args.victims, args.sizes)
+        result = run_sweep(args.n, args.warmup, args.victims, args.sizes, args.ctx)
     else:
         result = run_idle_vs_busy(args.n, args.warmup, args.victim_words, args.victims)
 
