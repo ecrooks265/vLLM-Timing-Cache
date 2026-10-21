@@ -1,0 +1,51 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# REPLICATION profile — reproduce Gu et al. (ICML 2025) white-box on vLLM/ROCm.
+# Runs now on the RX 7900 XTX stack with an UNGATED model so you can replicate
+# the method before Llama-3.1-8B access lands. To reproduce the paper's exact
+# model, swap `model.name` to meta-llama/Llama-3.1-8B-Instruct once access is
+# granted (nothing else changes).
+# ─────────────────────────────────────────────────────────────────────────────
+model:
+  name: "Qwen/Qwen2.5-7B-Instruct"   # ungated 7B; ~14x the 0.5B prefill compute
+  dtype: "bfloat16"
+  max_model_len: 4096
+
+server:
+  host: "127.0.0.1"
+  port: 8000
+  block_size: 16                 # ROCm V1 (block_size=1 unsupported — see README)
+  enable_prefix_caching: true
+  enforce_eager: true            # removes HIP-graph jitter from the TTFT signal
+  gpu_memory_utilization: 0.90   # 7B in bf16 (~15GB) + KV on a 24GB card
+  expose_metrics: true
+
+timing:
+  num_samples: 250               # paper's NUMSAMPLES
+  num_warmup: 10
+  timing_source: "client"        # per-request client TTFT (server-side TTFT not wired)
+  inter_request_delay: 0.05
+
+cache_levels:
+  - "per_user"                   # signal exists within one user's cache
+  - "global"                     # cross-user sharing — the real-world threat
+
+attack:
+  prefix_fraction: 0.95
+  max_tokens_to_recover: 32
+  beam_width: 1
+  candidate_vocab: "ascii"
+  victim_prompt_file: "config/victim_prompts.txt"
+  prompt_min_words: 120          # pad the cached prefix (~160 tok) for clean hit/miss separation
+
+stats:
+  ks_alpha: 1.0e-8
+  precision_target: 0.70         # paper reported AP 0.71–0.90 on vulnerable providers
+
+external:
+  enabled: false
+  provider: null
+  base_url: null
+
+run:
+  out_dir: "runs"
+  seed: 1337
