@@ -1,0 +1,5 @@
+model,params_B,samples,block_chars,hit_ms,miss_ms,delta_ms,noise_ms,snr,block_auc
+Qwen/Qwen2.5-0.5B-Instruct,0.5,40,64,14.085,13.845,-0.241,1.699,-0.142,0.4581
+Qwen/Qwen2.5-7B-Instruct,7.0,40,64,41.562,41.453,-0.109,0.998,-0.11,0.5162
+Qwen/Qwen2.5-1.5B-Instruct,1.5,40,64,26.644,26.95,0.306,0.948,0.323,0.6012
+Qwen/Qwen2.5-3B-Instruct,3.0,40,64,38.759,37.603,-1.155,1.293,-0.893,0.2812
