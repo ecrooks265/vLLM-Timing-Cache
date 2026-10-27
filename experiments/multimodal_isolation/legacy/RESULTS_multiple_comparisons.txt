@@ -1,0 +1,63 @@
+============================================================================================
+FAMILY: signal     (31 tests)
+============================================================================================
+  test                                                       raw p  Bonferroni      BH-FDR verdict@0.05
+  text 64 tok, defense OFF                                2.07e-35    6.42e-34    1.28e-34 significant
+  text 256 tok, defense OFF                               2.07e-35    6.42e-34    1.28e-34 significant
+  text 1024 tok, defense OFF                              2.07e-35    6.42e-34    1.28e-34 significant
+  text 2048 tok, defense OFF                              2.07e-35    6.42e-34    1.28e-34 significant
+  text 4096 tok, defense OFF                              2.07e-35    6.42e-34    1.28e-34 significant
+  text rep0 idle_open_channel                             8.46e-18    2.62e-16    3.28e-17 significant
+  text rep1 idle_open_channel                             8.46e-18    2.62e-16    3.28e-17 significant
+  text rep2 idle_open_channel                             8.46e-18    2.62e-16    3.28e-17 significant
+  text_load 0 threads                                     1.69e-17    5.24e-16    5.24e-17 significant
+  text_load 4 threads                                     1.69e-17    5.24e-16    5.24e-17 significant
+  image: repeated vs fresh image                          1.58e-14     4.9e-13    4.09e-14 significant
+  image: attacker vs unseen under salt (claim: OPEN)      1.58e-14     4.9e-13    4.09e-14 significant
+  text_load 32 threads                                    2.99e-14    9.28e-13    7.14e-14 significant
+  text rep0 load8_open_channel                            2.89e-13    8.97e-12    6.41e-13 significant
+  text 16 tok, defense OFF                                1.31e-11    4.05e-10    2.65e-11 significant
+  audio: identical vs fresh clip                          1.45e-11     4.5e-10    2.65e-11 significant
+  audio: attacker vs unseen under salt (claim: OPEN)      1.45e-11     4.5e-10    2.65e-11 significant
+  text rep1 load8_open_channel                            4.23e-10    1.31e-08    7.29e-10 significant
+  text rep2 load8_open_channel                            3.27e-09    1.01e-07    5.33e-09 significant
+  image rep0 salt_on_attack                               6.45e-09       2e-07     7.4e-09 significant
+  image rep0 same_image_different_prompt                  6.45e-09       2e-07     7.4e-09 significant
+  image rep1 salt_on_attack                               6.45e-09       2e-07     7.4e-09 significant
+  image rep1 same_image_different_prompt                  6.45e-09       2e-07     7.4e-09 significant
+  image rep2 salt_on_attack                               6.45e-09       2e-07     7.4e-09 significant
+  image rep2 same_image_different_prompt                  6.45e-09       2e-07     7.4e-09 significant
+  audio rep0 salt_on_attack                               6.45e-09       2e-07     7.4e-09 significant
+  audio rep2 salt_on_attack                               6.45e-09       2e-07     7.4e-09 significant
+  image: same image / different prompt                    1.29e-08       4e-07    1.43e-08 significant
+  audio rep1 salt_on_attack                               1.93e-07       6e-06    2.07e-07 significant
+  text_load 8 threads                                     8.74e-05     0.00271    9.03e-05 significant
+  text_load 16 threads                                     0.00655       0.203     0.00655 significant
+
+  -> at BH-FDR q=0.05: 31/31 significant
+  -> at the base paper's alpha=1e-8 (Bonferroni-corrected): 17/31 significant
+
+============================================================================================
+FAMILY: null       (10 tests)
+============================================================================================
+  test                                                       raw p  Bonferroni      BH-FDR verdict@0.05
+  text 2048 tok, defense ON (claim: closed)                  0.267           1       0.999 NOT significant
+  text 256 tok, defense ON (claim: closed)                   0.513           1       0.999 NOT significant
+  text 1024 tok, defense ON (claim: closed)                  0.665           1       0.999 NOT significant
+  image: one pixel different (claim: closed)                 0.678           1       0.999 NOT significant
+  text rep1 salt_on_attack                                   0.744           1       0.999 NOT significant
+  text rep2 salt_on_attack                                   0.744           1       0.999 NOT significant
+  text 64 tok, defense ON (claim: closed)                    0.813           1       0.999 NOT significant
+  text rep0 salt_on_attack                                   0.877           1       0.999 NOT significant
+  text 4096 tok, defense ON (claim: closed)                  0.928           1       0.999 NOT significant
+  text 16 tok, defense ON (claim: closed)                    0.999           1       0.999 NOT significant
+
+  -> at BH-FDR q=0.05: 0/10 significant
+  -> at the base paper's alpha=1e-8 (Bonferroni-corrected): 0/10 significant
+
+============================================================================================
+POOLED (both families mixed) -- reported only for completeness: 41 tests, Bonferroni alpha=0.05/41=0.0012
+============================================================================================
+  significant after Bonferroni at 0.05: 30/41
+
+wrote multiple_comparisons.json

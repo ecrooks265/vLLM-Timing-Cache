@@ -1,0 +1,36 @@
+{
+  "type": "static_source_audit_only_not_runtime_hits",
+  "vllm_version": "0.11.0",
+  "files": {
+    "v1/core/kv_cache_utils.py": {
+      "sha256": "0824beae09a3a8faeb54e8e0605d1661045e34a33a2026de537e6849a4c78ee4",
+      "excerpts": [
+        {
+          "start_line": 515,
+          "end_line": 543,
+          "text": "\n\ndef generate_block_hash_extra_keys(\n        request: Request, start_token_idx: int, end_token_idx: int,\n        start_mm_idx: int) -> tuple[Optional[tuple[Any, ...]], int]:\n    \"\"\"Generate extra keys for the block hash. The extra keys can come from\n    the multi-modal inputs and request specific metadata (e.g., LoRA ID).\n\n    Args:\n        request: The request object.\n        start_token_idx: The start token index of the block.\n        end_token_idx: The end token index of the block.\n        start_mm_idx: The start multi-modal index of the block.\n\n    Returns:\n        A tuple of extra keys and the next multi-modal index.\n    \"\"\"\n    mm_extra_keys: list[Any]\n    mm_extra_keys, new_start_mm_idx = _gen_mm_extra_hash_keys(\n        request, start_token_idx, end_token_idx, start_mm_idx)\n    lora_extra_keys: list[int] = _gen_lora_extra_hash_keys(request)\n    cache_salt_keys: list[str] = [request.cache_salt] if (\n        start_token_idx == 0 and request.cache_salt) else []\n\n    extra_keys: list[Any] = lora_extra_keys + mm_extra_keys + cache_salt_keys\n\n    if not extra_keys:\n        return None, new_start_mm_idx\n"
+        }
+      ]
+    },
+    "multimodal/processing.py": {
+      "sha256": "172daf0a00b23466db0c66849db56540380783e4974c380a85f2e574c14e837a",
+      "excerpts": [
+        {
+          "start_line": 1594,
+          "end_line": 1638,
+          "text": "        model_id = self.info.model_id\n\n        hashes: MultiModalHashes = {}\n        mm_uuids = mm_uuids or {}\n\n        for modality, items in mm_items.items():\n            if modality in mm_uuids:\n                mm_uuids_per_modality = mm_uuids[modality]\n                if isinstance(mm_uuids_per_modality, str):\n                    mm_uuids_per_modality = [mm_uuids_per_modality]\n\n                # For None entries, compute a hash; otherwise, use provided ID.\n                computed: list[str] = []\n                for i, item in enumerate(items):\n                    item_uuid = mm_uuids_per_modality[i]\n\n                    # NOTE: Even if a item_uuid is provided, we still compute a\n                    # hash if `hf_processor_mm_kwargs` or `tokenization_kwargs`\n                    # are provided. This is because the processed multimodal\n                    # inputs can be different depending on the processor kwargs.\n                    if item_uuid is None or \\\n                        hf_processor_mm_kwargs or \\\n                        tokenization_kwargs:\n\n                        # NOTE: use provided hash string to hash with kwargs\n                        # if available for better performance.\n                        item = item_uuid if item_uuid is not None else item\n                        computed.append(\n                            MultiModalHasher.hash_kwargs(\n                                model_id=model_id,\n                                **{modality: item},\n                                **hf_processor_mm_kwargs,\n                                **tokenization_kwargs))\n                    else:\n                        computed.append(item_uuid)\n                hashes[modality] = computed\n            else:\n                hashes[modality] = [\n                    MultiModalHasher.hash_kwargs(model_id=model_id,\n                                                 **{modality: item},\n                                                 **hf_processor_mm_kwargs,\n                                                 **tokenization_kwargs)\n                    for item in items\n                ]\n"
+        },
+        {
+          "start_line": 1783,
+          "end_line": 1817,
+          "text": "    def _cached_apply_hf_processor(\n        self,\n        prompt: Union[str, list[int]],\n        mm_data_items: MultiModalDataItems,\n        hf_processor_mm_kwargs: Mapping[str, object],\n        tokenization_kwargs: Mapping[str, object],\n        *,\n        mm_uuids: Optional[MultiModalUUIDDict] = None,\n    ) -> tuple[list[int], MultiModalProcessingInfo, bool]:\n        \"\"\"\n        Apply the HF processor on the full prompt text,\n        caching the results and reusing cached results.\n        \"\"\"\n        cache = self.cache\n\n        _, passthrough_data = self._get_hf_mm_data(mm_data_items)\n        if cache is None or passthrough_data:\n            return self._apply_hf_processor(\n                prompt=prompt,\n                mm_data_items=mm_data_items,\n                hf_processor_mm_kwargs=hf_processor_mm_kwargs,\n                tokenization_kwargs=tokenization_kwargs,\n                mm_uuids=mm_uuids,\n            )\n\n        mm_hashes = self._hash_mm_items(mm_data_items,\n                                        hf_processor_mm_kwargs,\n                                        tokenization_kwargs,\n                                        mm_uuids=mm_uuids)\n\n        mm_missing_data_items = self._get_cache_missing_items(\n            cache=cache,\n            mm_data_items=mm_data_items,\n            mm_hashes=mm_hashes,\n        )"
+        },
+        {
+          "start_line": 1715,
+          "end_line": 1726,
+          "text": "                    updates = missing_prompt_updates[missing_next_idx]\n\n                    mm_missing_next_idx[modality] += 1\n\n                    item = kwargs, updates\n                else:\n                    item = None\n\n                kwargs, updates = cache.get_and_update_item(item, item_hash)\n\n                merged_kwargs[modality].append(kwargs)\n                merged_prompt_updates[modality].append(["
+        }
+      ]
+    }
+  }
+}

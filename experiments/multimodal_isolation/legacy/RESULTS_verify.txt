@@ -1,0 +1,6 @@
+[block-hash] real vllm.utils.sha256 reproduced: d601b25499d0f14630c349b8 ...
+[mm-hash] case 0: match=True  (ac327b2ab9240384780639b5...)
+[mm-hash] case 1: match=True  (0720a96346a6859dbc679c84...)
+[mm-hash] case 2: match=True  (9205156ae4e76c357f438805...)
+
+RESULT: ALL BYTE-EQUAL vs real vLLM v0.11.0 source

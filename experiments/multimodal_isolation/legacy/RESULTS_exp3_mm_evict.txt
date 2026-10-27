@@ -1,0 +1,14 @@
+==============================================================================
+EXP3 / IMAGE - separating the two unsalted multimodal caches
+==============================================================================
+model  : Qwen/Qwen2.5-VL-3B-Instruct
+flags  : --max-num-batched-tokens 2048 --mm-processor-cache-gb 0
+flood  : 800 distinct images
+
+  before flood : victim image   49.05 ms | never-sent   86.41 ms | advantage   37.4 ms
+  after  flood : victim image   80.76 ms | never-sent   81.13 ms | advantage    0.4 ms
+  residual fraction: 1.0%
+
+advantage ~0 after the flood means the whole effect was the encoder cache; a remaining advantage means something else still leaks
+==============================================================================
+done

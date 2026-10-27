@@ -1,0 +1,29 @@
+{
+  "stage": "pilot",
+  "model": "Qwen/Qwen2.5-VL-3B-Instruct",
+  "gpu": "A100",
+  "seed": 7952026,
+  "repetitions": 1,
+  "calibration_images": 4,
+  "evaluation_images": 4,
+  "cost_images": 2,
+  "salt_modes": [
+    "distinct"
+  ],
+  "processor_cache_gb": 4,
+  "max_model_len": 4096,
+  "max_num_batched_tokens": 4096,
+  "max_num_seqs": 1,
+  "gpu_memory_utilization": 0.8,
+  "max_wall_seconds": 1800,
+  "startup_timeout_seconds": 600,
+  "request_timeout_seconds": 60,
+  "metrics_wait_seconds": 3,
+  "assumed_all_in_usd_per_hour": 3.0,
+  "budget_cap_usd": 40,
+  "phases": [
+    "attack",
+    "cost"
+  ],
+  "instrumentation": false
+}

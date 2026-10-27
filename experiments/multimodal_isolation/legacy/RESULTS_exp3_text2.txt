@@ -1,0 +1,41 @@
+==============================================================================
+EXP3 / TEXT SECOND PASS - scaling to 4096 tokens and robustness under load
+==============================================================================
+model : Qwen/Qwen2.5-3B-Instruct   vllm 0.11.0   block_size 16
+raw per-trial latencies are stored in the JSON; bootstrap them with analyze_rigor.py
+
+OPEN CHANNEL (no cache_salt), 60 trials per condition:
+  prefix    hit p50   miss p50     saved miss/hit     KS    AUC
+  16          49.5ms      51.4ms      2.0ms    1.04x  0.633  0.137
+  64          49.6ms      53.9ms      4.3ms    1.09x  1.000  0.000
+  256         51.8ms      63.3ms     11.5ms    1.22x  1.000  0.000
+  1024        57.9ms     152.0ms     94.0ms    2.62x  1.000  0.000
+  2048        64.4ms     295.8ms    231.4ms    4.60x  1.000  0.000
+  4096        74.5ms     567.6ms    493.0ms    7.61x  1.000  0.000
+
+SALT ON - the attacker's probe of the victim's content vs never-sent content:
+  prefix      delta        KS       AUC     KS p     ovl  cachedKV
+  16         -0.06ms     0.067     0.502    0.999   0.901  16.0 vs 16.0
+  64          0.05ms     0.117     0.499    0.813   0.820  16.0 vs 16.0
+  256         0.18ms     0.150     0.459    0.513   0.832  16.0 vs 16.0
+  1024        0.31ms     0.133     0.453    0.665   0.677  16.0 vs 16.0
+  2048        0.74ms     0.183     0.446    0.267   0.792  16.0 vs 16.0
+  4096        0.52ms     0.100     0.459    0.928   0.883  16.0 vs 16.0
+
+COST OF THE DEFENCE: attacker loses reuse / within tenant (ms)
+  16           1.7 / 2.11
+  64           4.1 / 4.36
+  256         11.2 / 11.75
+  1024        94.3 / 94.12
+  2048       231.5 / 233.01
+  4096       492.4 / 494.13
+
+UNDER CONCURRENT LOAD (1024-token prefix, timing-only measurement):
+  threads     hit p50  miss p50     delta     KS    AUC
+  0             56.8ms    150.2ms     93.4ms  1.000  0.000
+  8            126.4ms    175.1ms     48.6ms  1.000  0.000
+  32           474.3ms    577.5ms    103.2ms  0.950  0.048
+
+See analyze_rigor.py for the bootstrap CIs that turn 'salt ON' into a BOUND.
+==============================================================================
+done

@@ -1,0 +1,784 @@
+{
+  "text_salt_on_bounds": {
+    "16": {
+      "delta_p50_ms": -0.05710949999127024,
+      "delta_ci": [
+        -0.3926334999952985,
+        0.4191625000089516
+      ],
+      "auc": 0.5019444444444444,
+      "auc_ci": [
+        0.39721527777777776,
+        0.6058333333333333
+      ],
+      "perfect_margin_ms": -4.937076000004481,
+      "n": [
+        60,
+        60
+      ],
+      "open_effect_ms": 1.7317215000076658,
+      "cached_tokens_arms": [
+        16.0,
+        16.0
+      ]
+    },
+    "64": {
+      "delta_p50_ms": 0.04685150001648708,
+      "delta_ci": [
+        -0.32406749998870055,
+        0.38187400001277183
+      ],
+      "auc": 0.4988888888888889,
+      "auc_ci": [
+        0.3947222222222222,
+        0.605
+      ],
+      "perfect_margin_ms": -5.6012819999864405,
+      "n": [
+        60,
+        60
+      ],
+      "open_effect_ms": 3.9514014999610936,
+      "cached_tokens_arms": [
+        16.0,
+        16.0
+      ]
+    },
+    "256": {
+      "delta_p50_ms": 0.17886700001668032,
+      "delta_ci": [
+        -0.46490099998663936,
+        0.8502329999942049
+      ],
+      "auc": 0.4588888888888889,
+      "auc_ci": [
+        0.3552777777777778,
+        0.5608333333333333
+      ],
+      "perfect_margin_ms": -17.460585000037554,
+      "n": [
+        60,
+        60
+      ],
+      "open_effect_ms": 11.308870000021898,
+      "cached_tokens_arms": [
+        16.0,
+        16.0
+      ]
+    },
+    "1024": {
+      "delta_p50_ms": 0.3121835000001738,
+      "delta_ci": [
+        -0.45053968749755313,
+        0.9677260000273691
+      ],
+      "auc": 0.45305555555555554,
+      "auc_ci": [
+        0.35055555555555556,
+        0.5588888888888889
+      ],
+      "perfect_margin_ms": -21.452162000002772,
+      "n": [
+        60,
+        60
+      ],
+      "open_effect_ms": 94.17268699996839,
+      "cached_tokens_arms": [
+        16.0,
+        16.0
+      ]
+    },
+    "2048": {
+      "delta_p50_ms": 0.7422605000044769,
+      "delta_ci": [
+        -0.3311415499908321,
+        1.8316916374935488
+      ],
+      "auc": 0.4461111111111111,
+      "auc_ci": [
+        0.3419375,
+        0.5505555555555556
+      ],
+      "perfect_margin_ms": -10.977944999979172,
+      "n": [
+        60,
+        60
+      ],
+      "open_effect_ms": 232.6438064999934,
+      "cached_tokens_arms": [
+        16.0,
+        16.0
+      ]
+    },
+    "4096": {
+      "delta_p50_ms": 0.5162945000165564,
+      "delta_ci": [
+        -1.0309769999707896,
+        1.814415500064115
+      ],
+      "auc": 0.45861111111111114,
+      "auc_ci": [
+        0.35665972222222225,
+        0.5594444444444444
+      ],
+      "perfect_margin_ms": -14.323150999985046,
+      "n": [
+        60,
+        60
+      ],
+      "open_effect_ms": 492.87161249998235,
+      "cached_tokens_arms": [
+        16.0,
+        16.0
+      ]
+    }
+  },
+  "recovery": {
+    "design": "victim prompt = HEAD [A] LONG1 [B] LONG2 [C] LONG3; the attacker knows the fixed parts and only that each field is one of V candidates; each candidate is probed EXACTLY ONCE (a second probe would hit the attacker's own cache entry) and argmin(TTFT) wins the field",
+    "v_candidates_per_field": 12,
+    "fields": 3,
+    "queries_per_trial": 36,
+    "naive_joint_space": 1728,
+    "runs": [
+      {
+        "trial": 0,
+        "defense": "OFF",
+        "secret": [
+          "thick",
+          "Normal",
+          "Day"
+        ],
+        "recovered": [
+          "thick",
+          "Normal",
+          "Day"
+        ],
+        "correct": true,
+        "oracle_queries": 36,
+        "per_field": [
+          {
+            "field": 0,
+            "guess": "thick",
+            "best_ms": 60.90909699992153,
+            "runner_up_ms": 149.45802299996558,
+            "margin_ms": 88.54892600004405,
+            "all_times_ms": {
+              "length": 152.10653199994795,
+              "\u044f": 149.45802299996558,
+              "moral": 153.5907259999476,
+              "phy": 154.78737800003728,
+              "backup": 154.0560999999343,
+              "civ": 154.15128099994035,
+              "mas": 154.56572599998708,
+              "GM": 166.7750059999662,
+              "RF": 156.86285200001748,
+              "thick": 60.90909699992153,
+              "std": 155.656381999961,
+              "stick": 155.0811509999903
+            },
+            "truth": "thick",
+            "correct": true
+          },
+          {
+            "field": 1,
+            "guess": "Normal",
+            "best_ms": 61.0110469999654,
+            "runner_up_ms": 110.7906989999492,
+            "margin_ms": 49.7796519999838,
+            "all_times_ms": {
+              "ours": 130.72609900007137,
+              "url": 219.07077200000913,
+              "smoke": 198.19905500003188,
+              "Article": 199.38980299991726,
+              "tries": 149.720911999907,
+              "hy": 279.45953799996914,
+              "moving": 250.37862900001073,
+              "Normal": 61.0110469999654,
+              "known": 125.66678799998954,
+              "aid": 125.42724600007205,
+              "CPP": 138.99500100001205,
+              "Boy": 110.7906989999492
+            },
+            "truth": "Normal",
+            "correct": true
+          },
+          {
+            "field": 2,
+            "guess": "Day",
+            "best_ms": 60.932128999979795,
+            "runner_up_ms": 75.0493909999932,
+            "margin_ms": 14.117262000013397,
+            "all_times_ms": {
+              "mail": 77.79807499991875,
+              "edit": 75.62541100003273,
+              "mer": 76.35313200000837,
+              "concerns": 78.07741800002077,
+              "dass": 77.06724399997711,
+              "Day": 60.932128999979795,
+              "CR": 75.0493909999932,
+              "printing": 76.29797100003088,
+              "\u00fd": 76.68462399999498,
+              "black": 75.9735130000081,
+              "rooms": 76.1787540000114,
+              "lux": 77.36277300000438
+            },
+            "truth": "Day",
+            "correct": true
+          }
+        ]
+      },
+      {
+        "trial": 0,
+        "defense": "ON",
+        "secret": [
+          "thick",
+          "Normal",
+          "Day"
+        ],
+        "recovered": [
+          "moral",
+          "url",
+          "lux"
+        ],
+        "correct": false,
+        "oracle_queries": 36,
+        "per_field": [
+          {
+            "field": 0,
+            "guess": "moral",
+            "best_ms": 151.5499339999451,
+            "runner_up_ms": 151.79637699998239,
+            "margin_ms": 0.24644300003728858,
+            "all_times_ms": {
+              "length": 154.84989200001564,
+              "\u044f": 151.79637699998239,
+              "moral": 151.5499339999451,
+              "phy": 153.44541499996467,
+              "backup": 154.60626300000513,
+              "civ": 154.9351649999835,
+              "mas": 153.47348299997066,
+              "GM": 154.35860100001264,
+              "RF": 153.77158900002996,
+              "thick": 153.1687439999132,
+              "std": 153.02147799991417,
+              "stick": 153.9861280000423
+            },
+            "truth": "thick",
+            "correct": false
+          },
+          {
+            "field": 1,
+            "guess": "url",
+            "best_ms": 102.75568700001259,
+            "runner_up_ms": 103.7014140000565,
+            "margin_ms": 0.9457270000439166,
+            "all_times_ms": {
+              "ours": 105.56910699995115,
+              "url": 102.75568700001259,
+              "smoke": 103.7014140000565,
+              "Article": 103.86158400001477,
+              "tries": 105.41309299992463,
+              "hy": 105.263419000039,
+              "moving": 108.5008159999461,
+              "Normal": 105.46459499994398,
+              "known": 109.28133000004436,
+              "aid": 107.21287100000154,
+              "CPP": 105.02169300002606,
+              "Boy": 105.95811100006358
+            },
+            "truth": "Normal",
+            "correct": false
+          },
+          {
+            "field": 2,
+            "guess": "lux",
+            "best_ms": 75.85449400005473,
+            "runner_up_ms": 76.51124899996375,
+            "margin_ms": 0.6567549999090261,
+            "all_times_ms": {
+              "mail": 78.26533900004051,
+              "edit": 77.94879800007948,
+              "mer": 78.85944199995265,
+              "concerns": 78.87098200001219,
+              "dass": 79.18993400005547,
+              "Day": 78.99951000001693,
+              "CR": 78.67346000000452,
+              "printing": 76.60751100002017,
+              "\u00fd": 76.51124899996375,
+              "black": 78.84882899998047,
+              "rooms": 76.57633199994507,
+              "lux": 75.85449400005473
+            },
+            "truth": "Day",
+            "correct": false
+          }
+        ]
+      },
+      {
+        "trial": 1,
+        "defense": "OFF",
+        "secret": [
+          "backup",
+          "aid",
+          "Day"
+        ],
+        "recovered": [
+          "phy",
+          "known",
+          "mer"
+        ],
+        "correct": false,
+        "oracle_queries": 36,
+        "per_field": [
+          {
+            "field": 0,
+            "guess": "phy",
+            "best_ms": 55.067603999987114,
+            "runner_up_ms": 56.41646399999445,
+            "margin_ms": 1.3488600000073347,
+            "all_times_ms": {
+              "length": 58.62692699997751,
+              "\u044f": 57.836081000004924,
+              "moral": 57.02067499998975,
+              "phy": 55.067603999987114,
+              "backup": 57.23800099997334,
+              "civ": 57.214724000004935,
+              "mas": 57.11262500005887,
+              "GM": 56.46794699998736,
+              "RF": 56.41646399999445,
+              "thick": 57.06790099998216,
+              "std": 58.10583599998154,
+              "stick": 59.47902499997326
+            },
+            "truth": "backup",
+            "correct": false
+          },
+          {
+            "field": 1,
+            "guess": "known",
+            "best_ms": 105.21265900001708,
+            "runner_up_ms": 105.36009500003729,
+            "margin_ms": 0.14743600002020685,
+            "all_times_ms": {
+              "ours": 110.99590700007411,
+              "url": 110.78048000001672,
+              "smoke": 111.7882550000786,
+              "Article": 111.6513339999301,
+              "tries": 112.80732900002022,
+              "hy": 114.59469800001898,
+              "moving": 113.89819900000475,
+              "Normal": 107.45295699996404,
+              "known": 105.21265900001708,
+              "aid": 105.36009500003729,
+              "CPP": 107.35107799996513,
+              "Boy": 108.036683000023
+            },
+            "truth": "aid",
+            "correct": false
+          },
+          {
+            "field": 2,
+            "guess": "mer",
+            "best_ms": 75.91426800001955,
+            "runner_up_ms": 76.21094600006018,
+            "margin_ms": 0.29667800004062883,
+            "all_times_ms": {
+              "mail": 76.24337200002174,
+              "edit": 76.21094600006018,
+              "mer": 75.91426800001955,
+              "concerns": 77.048958999967,
+              "dass": 81.22065500003828,
+              "Day": 77.92501899996296,
+              "CR": 79.60380600002281,
+              "printing": 79.69237899999371,
+              "\u00fd": 79.46617300001435,
+              "black": 77.44818999992731,
+              "rooms": 78.72555900007683,
+              "lux": 78.0016840000144
+            },
+            "truth": "Day",
+            "correct": false
+          }
+        ]
+      },
+      {
+        "trial": 1,
+        "defense": "ON",
+        "secret": [
+          "backup",
+          "aid",
+          "Day"
+        ],
+        "recovered": [
+          "backup",
+          "moving",
+          "black"
+        ],
+        "correct": false,
+        "oracle_queries": 36,
+        "per_field": [
+          {
+            "field": 0,
+            "guess": "backup",
+            "best_ms": 151.9730840000193,
+            "runner_up_ms": 152.174389000038,
+            "margin_ms": 0.20130500001869223,
+            "all_times_ms": {
+              "length": 153.0128509999713,
+              "\u044f": 152.174389000038,
+              "moral": 152.33310300004632,
+              "phy": 153.62123900001734,
+              "backup": 151.9730840000193,
+              "civ": 152.32941899989783,
+              "mas": 152.44638500007568,
+              "GM": 153.79548200007775,
+              "RF": 156.0027609999679,
+              "thick": 154.88943399998334,
+              "std": 154.60488500002612,
+              "stick": 158.40541499994742
+            },
+            "truth": "backup",
+            "correct": true
+          },
+          {
+            "field": 1,
+            "guess": "moving",
+            "best_ms": 101.99873999999909,
+            "runner_up_ms": 102.46833899998364,
+            "margin_ms": 0.4695989999845551,
+            "all_times_ms": {
+              "ours": 105.5029750000358,
+              "url": 104.73234199992021,
+              "smoke": 103.32413699995868,
+              "Article": 102.6945059999207,
+              "tries": 103.20919899993442,
+              "hy": 104.19893799996771,
+              "moving": 101.99873999999909,
+              "Normal": 104.73493799997868,
+              "known": 102.46833899998364,
+              "aid": 108.48707700006344,
+              "CPP": 105.88749199996528,
+              "Boy": 105.65072899998995
+            },
+            "truth": "aid",
+            "correct": false
+          },
+          {
+            "field": 2,
+            "guess": "black",
+            "best_ms": 74.68075099995986,
+            "runner_up_ms": 74.79264599999169,
+            "margin_ms": 0.11189500003183639,
+            "all_times_ms": {
+              "mail": 75.31961300003331,
+              "edit": 76.01511500001834,
+              "mer": 77.96508800004176,
+              "concerns": 77.37739800006693,
+              "dass": 75.80393400007779,
+              "Day": 75.12860000008459,
+              "CR": 75.64799099998254,
+              "printing": 75.28291799997078,
+              "\u00fd": 76.43335900002057,
+              "black": 74.68075099995986,
+              "rooms": 74.79264599999169,
+              "lux": 75.90952700002163
+            },
+            "truth": "Day",
+            "correct": false
+          }
+        ]
+      },
+      {
+        "trial": 2,
+        "defense": "OFF",
+        "secret": [
+          "phy",
+          "Normal",
+          "edit"
+        ],
+        "recovered": [
+          "mas",
+          "tries",
+          "CR"
+        ],
+        "correct": false,
+        "oracle_queries": 36,
+        "per_field": [
+          {
+            "field": 0,
+            "guess": "mas",
+            "best_ms": 56.009756999969795,
+            "runner_up_ms": 56.34647099998347,
+            "margin_ms": 0.33671400001367147,
+            "all_times_ms": {
+              "length": 56.621796999934304,
+              "\u044f": 56.4046929999904,
+              "moral": 57.06816700001127,
+              "phy": 58.1231649999836,
+              "backup": 57.089501999939785,
+              "civ": 56.34647099998347,
+              "mas": 56.009756999969795,
+              "GM": 56.60817099999349,
+              "RF": 56.6159319999997,
+              "thick": 57.81446399998913,
+              "std": 56.69646399996964,
+              "stick": 56.938208000019586
+            },
+            "truth": "phy",
+            "correct": false
+          },
+          {
+            "field": 1,
+            "guess": "tries",
+            "best_ms": 101.17265599990333,
+            "runner_up_ms": 101.6737390000344,
+            "margin_ms": 0.5010830001310751,
+            "all_times_ms": {
+              "ours": 104.021062999891,
+              "url": 106.90467000006265,
+              "smoke": 103.47310999998172,
+              "Article": 103.81303799999841,
+              "tries": 101.17265599990333,
+              "hy": 103.93412600001284,
+              "moving": 101.97050199997193,
+              "Normal": 102.12024100007966,
+              "known": 114.50103000004219,
+              "aid": 101.6737390000344,
+              "CPP": 102.15199200001734,
+              "Boy": 103.18734899999527
+            },
+            "truth": "Normal",
+            "correct": false
+          },
+          {
+            "field": 2,
+            "guess": "CR",
+            "best_ms": 74.38105699998232,
+            "runner_up_ms": 74.52846000001045,
+            "margin_ms": 0.14740300002813456,
+            "all_times_ms": {
+              "mail": 75.15324799999235,
+              "edit": 74.56484299996191,
+              "mer": 75.06986999999299,
+              "concerns": 76.6783059999625,
+              "dass": 75.93901200004893,
+              "Day": 74.52846000001045,
+              "CR": 74.38105699998232,
+              "printing": 75.79737599996861,
+              "\u00fd": 77.4473809999563,
+              "black": 75.30862099997648,
+              "rooms": 76.5385749999723,
+              "lux": 75.54566500004967
+            },
+            "truth": "edit",
+            "correct": false
+          }
+        ]
+      },
+      {
+        "trial": 2,
+        "defense": "ON",
+        "secret": [
+          "phy",
+          "Normal",
+          "edit"
+        ],
+        "recovered": [
+          "\u044f",
+          "Normal",
+          "Day"
+        ],
+        "correct": false,
+        "oracle_queries": 36,
+        "per_field": [
+          {
+            "field": 0,
+            "guess": "\u044f",
+            "best_ms": 151.41874500000085,
+            "runner_up_ms": 151.73908799999936,
+            "margin_ms": 0.3203429999985019,
+            "all_times_ms": {
+              "length": 153.14649300000838,
+              "\u044f": 151.41874500000085,
+              "moral": 152.589169999942,
+              "phy": 152.70001700002922,
+              "backup": 153.28245000000607,
+              "civ": 152.36477600001308,
+              "mas": 151.73908799999936,
+              "GM": 152.53342200003317,
+              "RF": 152.88212699999804,
+              "thick": 151.76291699992817,
+              "std": 152.8285250000181,
+              "stick": 153.2702199999676
+            },
+            "truth": "phy",
+            "correct": false
+          },
+          {
+            "field": 1,
+            "guess": "Normal",
+            "best_ms": 106.31231900003968,
+            "runner_up_ms": 106.5205339999693,
+            "margin_ms": 0.20821499992962345,
+            "all_times_ms": {
+              "ours": 110.12465800001792,
+              "url": 109.60435399999824,
+              "smoke": 113.67012400000931,
+              "Article": 112.67370200005189,
+              "tries": 106.71837699999287,
+              "hy": 110.68553399991288,
+              "moving": 106.5205339999693,
+              "Normal": 106.31231900003968,
+              "known": 108.60855299995364,
+              "aid": 106.56547100006719,
+              "CPP": 111.47889300002589,
+              "Boy": 109.72038800002792
+            },
+            "truth": "Normal",
+            "correct": true
+          },
+          {
+            "field": 2,
+            "guess": "Day",
+            "best_ms": 74.24875000003794,
+            "runner_up_ms": 74.83015399998294,
+            "margin_ms": 0.581403999944996,
+            "all_times_ms": {
+              "mail": 76.0233320000907,
+              "edit": 76.93903300003058,
+              "mer": 74.92364600000201,
+              "concerns": 76.96922800005268,
+              "dass": 75.50896100008231,
+              "Day": 74.24875000003794,
+              "CR": 77.93964999996206,
+              "printing": 76.3741220000611,
+              "\u00fd": 75.35465300009037,
+              "black": 74.83015399998294,
+              "rooms": 76.33755400001974,
+              "lux": 75.13245900008769
+            },
+            "truth": "edit",
+            "correct": false
+          }
+        ]
+      }
+    ],
+    "salt_off": {
+      "fields_recovered": 3,
+      "fields_total": 9,
+      "trials_fully_correct": 1,
+      "median_margin_ms": 0.5010830001310751
+    },
+    "salt_on": {
+      "fields_recovered": 2,
+      "fields_total": 9,
+      "trials_fully_correct": 0,
+      "median_margin_ms": 0.3203429999985019,
+      "chance_level_fields": 0.75
+    }
+  },
+  "concurrent_load": [
+    {
+      "threads": 0,
+      "delta_ms": 93.37213300000258,
+      "auc": 0.0,
+      "hit_p50_ms": 56.81020999998054,
+      "miss_p50_ms": 150.18234299998312
+    },
+    {
+      "threads": 8,
+      "delta_ms": 48.62594749999971,
+      "auc": 0.0,
+      "hit_p50_ms": 126.43434450001223,
+      "miss_p50_ms": 175.06029200001194
+    },
+    {
+      "threads": 32,
+      "delta_ms": 103.17481149996865,
+      "auc": 0.0475,
+      "hit_p50_ms": 474.30777750003017,
+      "miss_p50_ms": 577.4825889999988
+    }
+  ],
+  "mm_extra": {
+    "same image, DIFFERENT prompt text": {
+      "delta_p50_ms": 30.197407999992265,
+      "delta_ci": [
+        29.329451999984713,
+        31.143063000001803
+      ],
+      "auc": 0.0,
+      "auc_ci": [
+        0.0,
+        0.0
+      ],
+      "perfect_margin_ms": 26.89031900001737,
+      "n": [
+        15,
+        15
+      ]
+    },
+    "one pixel different": {
+      "delta_p50_ms": 0.13510199997313066,
+      "delta_ci": [
+        -0.6250239999872065,
+        1.6683540000315134
+      ],
+      "auc": 0.38222222222222224,
+      "auc_ci": [
+        0.18666666666666668,
+        0.5955555555555555
+      ],
+      "perfect_margin_ms": -156.77164300001323,
+      "n": [
+        15,
+        15
+      ]
+    }
+  },
+  "deep_eviction": {
+    "before_flood_victim_image": {
+      "ttft_ms": 32.81549999999811,
+      "cached_tokens": 0.0
+    },
+    "after_flood_victim_image": {
+      "ttft_ms": 55.55596400000695,
+      "cached_tokens": 0.0
+    },
+    "never_sent_control": {
+      "ttft_ms": 61.94211299998642,
+      "cached_tokens": 0.0
+    },
+    "advantage_before_ms": 29.12661299998831,
+    "advantage_after_ms": 6.3861489999794685,
+    "residual_fraction": 0.21925477569197735,
+    "sanity_same_tenant_reuse_still_works": {
+      "warm_ttft_ms": 34.59174299996448,
+      "hit_ttft_ms": 29.05697900001769,
+      "hit_cached_tokens": 160.0
+    }
+  },
+  "reencode_variants": {
+    "flac_lossless_same_pcm": {
+      "first_send_cached_tokens": 16.0,
+      "first_send_ttft_ms": 104.26736200000164,
+      "self_repeat_cached_tokens": 48.0,
+      "reuses_original_entry": false,
+      "template_baseline_cached_tokens": 16.0
+    },
+    "ogg_vorbis_lossy": {
+      "first_send_cached_tokens": 16.0,
+      "first_send_ttft_ms": 94.52129300001388,
+      "self_repeat_cached_tokens": 48.0,
+      "reuses_original_entry": false,
+      "template_baseline_cached_tokens": 16.0
+    },
+    "mp3_lossy": {
+      "first_send_cached_tokens": 16.0,
+      "first_send_ttft_ms": 92.51913599999284,
+      "self_repeat_cached_tokens": 48.0,
+      "reuses_original_entry": false,
+      "template_baseline_cached_tokens": 16.0
+    }
+  }
+}

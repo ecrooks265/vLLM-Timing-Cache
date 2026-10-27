@@ -1,0 +1,20 @@
+==============================================================================
+EXP3 / REPEATABILITY - IMAGE (K=3, server restarted each rep)
+==============================================================================
+design: each repetition restarts the vLLM server; image seeds fixed across reps
+repetitions: 3   (each repetition RESTARTS the vLLM server)
+
+  measurement                        AUC per rep              AP per rep             delta p50 per rep
+  salt_on_attack                     0.000, 0.000, 0.000      1.000, 1.000, 1.000    65.3 ms, 65.9 ms, 66.6 ms
+                                     mean 0.000 +- 0.000      mean 1.000 +- 0.000    mean 65.9 +- 0.7 ms
+  same_image_different_prompt        0.000, 0.000, 0.000      1.000, 1.000, 1.000    64.9 ms, 66.8 ms, 66.7 ms
+                                     mean 0.000 +- 0.000      mean 1.000 +- 0.000    mean 66.1 +- 1.1 ms
+
+READING:
+  * Separability (AUC/AP) is essentially perfectly reproducible -- every headline
+    claim reproduced in all repetitions.
+  * The ABSOLUTE effect size is stable within a protocol but NOT across sessions
+    (the image attack measured 46.7 ms originally and ~66 ms here: 41% apart).
+    Quote effect sizes as RANGES, never as one number.
+==============================================================================
+done

@@ -1,0 +1,347 @@
+==============================================================================
+EXP3 / TEXT CHANNEL - TTFT prefix-cache timing on self-hosted vLLM v0.11.0
+==============================================================================
+model            : Qwen/Qwen2.5-3B-Instruct
+vllm version     : 0.11.0   block_size=16
+trials/condition : 30
+TTFT             : chat.completions create -> first streamed chunk (max_tokens=1)
+ground truth     : per-REQUEST deltas of vllm:prefix_cache_hits/_queries
+
+HIT vs MISS latency (defense OFF = no cache_salt):
+  prefix    hit p50  miss p50     saved  speedup
+  16          49.3ms     51.1ms      1.8ms    1.04x
+  64          50.6ms     54.0ms      3.4ms    1.07x
+  256         52.2ms     63.5ms     11.2ms    1.21x
+  1024        56.2ms    151.7ms     95.5ms    2.70x
+
+ATTACKER DETECTOR: can a co-tenant tell 'victim content is cached' from 'unseen'?
+  (KS/AUC/overlap of the two TTFT distributions; AUC 0.5 and overlap 1.0 = no signal)
+  prefix  | DEFENSE OFF (no salt)                  | DEFENSE ON (per-tenant salt)           | null floor
+          |   delta    KS   AUC   ovl     KS p |   delta    KS   AUC   ovl     KS p |    KS   ovl
+  16      |    1.7ms  0.57 0.220  0.47  8.7e-05 |   -0.9ms  0.20 0.563  0.74  5.9e-01 |  0.28  0.75
+  64      |    3.7ms  0.90 0.047  0.09  5.8e-13 |    0.2ms  0.13 0.477  0.80  9.6e-01 |  0.29  0.67
+  256     |   11.5ms  1.00 0.000  0.00  1.7e-17 |    0.3ms  0.20 0.449  0.86  5.9e-01 |  0.28  0.73
+  1024    |   95.6ms  1.00 0.000  0.00  1.7e-17 |    0.1ms  0.20 0.466  0.68  5.9e-01 |  0.30  0.66
+
+GROUND TRUTH (engine counters) - cached prompt tokens per condition:
+  prefix   OFF hit  OFF miss   OFF ctl |  ON same   ON cold   ON att ON att ctl
+  16            32        16        16 |       32         0       16         16
+  64            80        16        16 |       80         0       16         16
+  256          272        16        16 |      272         0       16         16
+  1024        1040        16        16 |     1040         0       16         16
+
+COST OF THE DEFENSE (extra TTFT when reuse is denied), ms:
+  prefix        attacker loses reuse same-tenant (should be ~0)
+  16                           2.4                      0.70
+  64                           3.6                      0.41
+  256                         11.3                     -0.09
+  1024                        95.4                      0.16
+
+READING:
+  * Defense OFF: hit and miss TTFT separate completely from ~64 tokens up
+    (KS=1.00, AUC=0.000, KDE overlap=0.000 at 256 and 1024 tokens).
+  * Defense ON : every ON separation sits AT OR BELOW the empirical null floor
+    measured on the same condition's own random halves -> no usable signal.
+  * Ground truth confirms the mechanism: the attacker's probe of content the
+    victim cached returns the SAME cached-token count (the shared chat-template
+    block) as its probe of content nobody sent. There is nothing to detect.
+  * Cost: ~0 ms within a tenant; the attacker/other-tenant pays the full lost
+    reuse (up to ~95 ms at 1024 tokens, a 2.7x TTFT penalty).
+==============================================================================
+done
+
+==============================================================================
+EXP3 / IMAGE CHANNEL - TTFA timing on self-hosted vLLM v0.11.0
+==============================================================================
+model      : Qwen/Qwen2.5-VL-3B-Instruct
+image      : 336x336x3 random uint8 PNG, sent as a base64 data: URL
+hit        : byte-identical PNG re-sent
+miss       : fresh random image every call
+
+REPEATED IMAGE (defense OFF):
+  hit  p50     36.6 ms   cached_tokens_p50    160   frac_trials_hit 1.00
+  miss p50     85.0 ms   cached_tokens_p50     16   frac_trials_hit 1.00
+  detector: delta   48.4 ms  KS 1.000  p 1.58e-14  AUC 0.000  overlap 0.000
+
+DEFENSE ON (per-tenant cache_salt):
+  victim same-salt hit cached_tokens_p50 160
+  attacker vs victim image   cached_tokens_p50 16
+  attacker vs unseen  image  cached_tokens_p50 16
+  detector: delta   46.7 ms  KS 1.000  p 1.58e-14  AUC 0.000  overlap 0.000
+  null floor (same condition): KS 0.305  overlap 0.724
+
+salt cost (attacker loses reuse): 2.6 ms
+==============================================================================
+done
+
+==============================================================================
+EXP3 / AUDIO CHANNEL - TTFA timing on self-hosted vLLM v0.11.0
+==============================================================================
+model : Qwen/Qwen2-Audio-7B-Instruct
+clip  : 1.0 s of 16 kHz float32 noise -> PCM_16 WAV data: URL
+
+IDENTICAL BYTES (defense OFF):
+  hit  p50     38.5 ms   cached_tokens_p50     48
+  miss p50     87.5 ms   cached_tokens_p50     16
+  detector: delta   49.0 ms  KS 1.000  p 1.45e-11  AUC 0.000  overlap 0.000
+  null floor (same condition): KS 0.328  overlap 0.705
+
+DECODE-DETERMINISM (exp2's question, answered end-to-end):
+  what matters is whether the FIRST send of a re-encode reuses the ORIGINAL clip's
+  cached entry -- repeats always hit themselves, so a median over repeats is meaningless.
+  template baseline (an unseen clip)              : cached_tokens 16
+  identical bytes, first send                    : cached_tokens 48
+  soundfile decode round-trip, first send        : cached_tokens 48.0  -> reuses original entry: True
+  resampled 16k -> 22k, first send               : cached_tokens 16.0  -> reuses original entry: False
+  round-trip self-repeat / resample self-repeat  : cached_tokens 48.0 / 64.0
+==============================================================================
+done
+
+==============================================================================
+EXP3 / IMAGE MECHANISM - why cache_salt does not close the image channel
+==============================================================================
+model : Qwen/Qwen2.5-VL-3B-Instruct   vllm 0.11.0   block_size 16
+design: fresh cache_salt on every probe -> both arms are KV-cache misses
+        => in EVERY arm the engine reports 0 cached KV tokens, so the KV prefix
+           cache contributes nothing and cannot explain any difference.
+
+A. WITH the MM processor cache (--mm-processor-cache-gb default 4 GiB):
+     victim's image   p50   40.08 ms   (cached KV tokens 0)
+     never-sent image p50   82.60 ms   (cached KV tokens 0)
+     => delta 42.5 ms   KS 1.000   AUC 0.000   overlap 4.35e-92
+     KV cached tokens identical in both arms: True
+
+B. WITH the MM processor cache DISABLED (--mm-processor-cache-gb 0):
+     victim's image   p50   50.15 ms   (cached KV tokens 0)
+     never-sent image p50   91.24 ms   (cached KV tokens 0)
+     => delta 41.1 ms   KS 1.000   AUC 0.000   overlap 2.40e-13
+     ==> the advantage SURVIVES, so the processor cache is NOT the mechanism.
+
+C. EVICT the encoder cache (flood 400 distinct images), then re-probe the SAME image
+   with a fresh salt:
+     before flood, victim's image :   38.27 ms
+     after  flood, victim's image :   78.39 ms
+     never-sent control           :   85.58 ms
+     attacker advantage: 47.3 ms -> 7.2 ms
+     ==> eviction REMOVED the advantage: it is the content-keyed EncoderCacheManager
+         (vllm/v1/core/encoder_cache_manager.py, keyed on mm_hash; no cache_salt in it).
+
+CONCLUSION: cache_salt salts only the KV prefix cache. The multimodal processor/encoder
+caches are keyed on content alone and stay shared across tenants, so the image and audio
+channels remain open after the defence is enabled.
+==============================================================================
+done
+
+==============================================================================
+EXP3 / TEXT SECOND PASS - scaling to 4096 tokens and robustness under load
+==============================================================================
+model : Qwen/Qwen2.5-3B-Instruct   vllm 0.11.0   block_size 16
+raw per-trial latencies are stored in the JSON; bootstrap them with analyze_rigor.py
+
+OPEN CHANNEL (no cache_salt), 60 trials per condition:
+  prefix    hit p50   miss p50     saved miss/hit     KS    AUC
+  16          49.5ms      51.4ms      2.0ms    1.04x  0.633  0.137
+  64          49.6ms      53.9ms      4.3ms    1.09x  1.000  0.000
+  256         51.8ms      63.3ms     11.5ms    1.22x  1.000  0.000
+  1024        57.9ms     152.0ms     94.0ms    2.62x  1.000  0.000
+  2048        64.4ms     295.8ms    231.4ms    4.60x  1.000  0.000
+  4096        74.5ms     567.6ms    493.0ms    7.61x  1.000  0.000
+
+SALT ON - the attacker's probe of the victim's content vs never-sent content:
+  prefix      delta        KS       AUC     KS p     ovl  cachedKV
+  16         -0.06ms     0.067     0.502    0.999   0.901  16.0 vs 16.0
+  64          0.05ms     0.117     0.499    0.813   0.820  16.0 vs 16.0
+  256         0.18ms     0.150     0.459    0.513   0.832  16.0 vs 16.0
+  1024        0.31ms     0.133     0.453    0.665   0.677  16.0 vs 16.0
+  2048        0.74ms     0.183     0.446    0.267   0.792  16.0 vs 16.0
+  4096        0.52ms     0.100     0.459    0.928   0.883  16.0 vs 16.0
+
+COST OF THE DEFENCE: attacker loses reuse / within tenant (ms)
+  16           1.7 / 2.11
+  64           4.1 / 4.36
+  256         11.2 / 11.75
+  1024        94.3 / 94.12
+  2048       231.5 / 233.01
+  4096       492.4 / 494.13
+
+UNDER CONCURRENT LOAD (1024-token prefix, timing-only measurement):
+  threads     hit p50  miss p50     delta     KS    AUC
+  0             56.8ms    150.2ms     93.4ms  1.000  0.000
+  8            126.4ms    175.1ms     48.6ms  1.000  0.000
+  32           474.3ms    577.5ms    103.2ms  0.950  0.048
+
+See analyze_rigor.py for the bootstrap CIs that turn 'salt ON' into a BOUND.
+==============================================================================
+done
+
+==============================================================================
+EXP3 / END-TO-END LIVE SECRET RECOVERY (TTFT only, no privileged access)
+==============================================================================
+model : Qwen/Qwen2.5-3B-Instruct
+design: HEAD [A] LONG1 [B] LONG2 [C] LONG3; fresh template per trial
+
+Victim prompt = HEAD [A] LONG1 [B] LONG2 [C] LONG3; the attacker knows the fixed
+parts and only that each field is one of V candidates. Each candidate is probed
+EXACTLY ONCE (a second probe would hit the attacker's own cache entry).
+
+  V = 12 candidates/field, 3 fields -> 36 queries per trial
+  naive joint search space = 1728  (48x more queries)
+
+  arm        fields recovered trials fully right median margin    median truth rank
+  SALT_OFF   18/18 (100.0%)   6/6                39.32 ms         1.0 (chance 6.5)
+  SALT_ON    1/18 (5.6%)      0/6                0.44 ms          8.0 (chance 6.5)
+
+READING: the secret is recovered EXACTLY, every trial, from nothing but TTFT; the
+salt-ON control lands at chance. This is the link between exp4's V*n query model
+(over an ideal oracle) and exp3's demonstration that the noisy oracle is reliable.
+==============================================================================
+done
+
+==============================================================================
+EXP3 / IMAGE SECOND PASS - what does the attacker actually need to know?
+==============================================================================
+model : Qwen/Qwen2.5-VL-3B-Instruct
+Every probe uses a FRESH cache_salt, so both arms of each comparison are KV-cache misses.
+
+A. SAME image, DIFFERENT prompt text (does the attacker need the victim's prompt?)
+   victim's image + attacker's own text : p50   31.20 ms  cachedKV 0
+   never-sent image + attacker's text  : p50   61.40 ms  cachedKV 0
+   => delta 30.2 ms  KS 1.000  AUC 0.000  (KV cached tokens identical: True)
+   => the attacker needs ONLY the image; the multimodal channel is stronger than text.
+
+B. ONE PIXEL different (is the channel exact-content only?)
+   1-pixel-changed image : p50   60.63 ms
+   never-sent image      : p50   60.77 ms
+   => delta 0.1 ms  AUC 0.382  -> indistinguishable: EXACT content only
+
+C. DEEP EVICTION (1200 distinct images) - is the residual gone?
+   before flood   32.82 ms | after flood   55.56 ms | never-sent control   61.94 ms
+   attacker advantage 29.1 -> 6.4 ms   (residual 21.9%)
+   sanity: same-tenant reuse still works after the flood (hit cached tokens 160)
+   A residual that does NOT shrink as the flood grows means a second, larger cache is
+   still holding the image -- the 4 GiB mm processor cache. See RESULTS_exp3_mm_evict.txt.
+==============================================================================
+done
+
+==============================================================================
+EXP3 / AUDIO SECOND PASS - how much re-encoding does the channel survive?
+==============================================================================
+model : Qwen/Qwen2-Audio-7B-Instruct
+What matters is whether the FIRST send of a variant reuses the ORIGINAL clip's entry
+(cached tokens clearly above the template baseline); self-repeats always hit themselves.
+
+  never-sent clip (baseline) : cached_tokens 16
+  identical WAV re-sent      : cached_tokens 48
+
+  flac_lossless_same_pcm     : first-send cached_tokens 16.0  reuses original: False
+  ogg_vorbis_lossy           : first-send cached_tokens 16.0  reuses original: False
+  mp3_lossy                  : first-send cached_tokens 16.0  reuses original: False
+
+READING: only a byte-identical file reuses the original entry. Even a LOSSLESS
+container change (WAV -> FLAC) breaks it, because the decode path quantises
+differently (verified locally: the decoded arrays differ by 3.05e-05, which is
+already enough to change the media key). The audio channel needs a bit-identical
+decode path, so the attacker must hold the identical file.
+==============================================================================
+done
+
+==============================================================================
+EXP3 / IMAGE - separating the two unsalted multimodal caches
+==============================================================================
+model  : Qwen/Qwen2.5-VL-3B-Instruct
+flags  : --max-num-batched-tokens 2048 --mm-processor-cache-gb 0
+flood  : 800 distinct images
+
+  before flood : victim image   49.05 ms | never-sent   86.41 ms | advantage   37.4 ms
+  after  flood : victim image   80.76 ms | never-sent   81.13 ms | advantage    0.4 ms
+  residual fraction: 1.0%
+
+advantage ~0 after the flood means the whole effect was the encoder cache; a remaining advantage means something else still leaks
+==============================================================================
+done
+
+==============================================================================
+EXP3 / TEXT DETECTOR UNDER CONCURRENT LOAD (raw samples kept)
+==============================================================================
+model : Qwen/Qwen2.5-3B-Instruct   prefix 1024 tokens   30 trials per arm
+note  : timing-only requests; under load the per-request KV counter delta is meaningless because other requests advance the same counters
+
+  threads     hit p50  miss p50     delta      KS     AUC
+  0             59.7ms    152.6ms    +92.9ms   1.000   0.000
+  4             93.9ms    192.2ms    +98.4ms   1.000   0.000
+  8            153.1ms    186.6ms    +33.5ms   0.567   0.212
+  16           237.8ms    286.5ms    +48.7ms   0.433   0.244
+  32           394.4ms    605.5ms   +211.1ms   0.933   0.014
+
+READING: the channel persists under load but detectability is DEGRADED and
+RUN-DEPENDENT. An earlier, separate run found perfect separation at 8 threads
+(AUC 0.000); this one does not (KS 0.567, AUC 0.212). Do not claim the detector
+always separates under load -- claim it survives, with variable reliability.
+==============================================================================
+done
+
+==============================================================================
+EXP3 / REPEATABILITY - TEXT (K=3, server restarted each rep)
+==============================================================================
+design: each repetition restarts the vLLM server; prompts fixed across reps
+repetitions: 3   (each repetition RESTARTS the vLLM server)
+
+  measurement                        AUC per rep              AP per rep             delta p50 per rep
+  idle_open_channel                  0.000, 0.000, 0.000      1.000, 1.000, 1.000    91.5 ms, 92.1 ms, 93.4 ms
+                                     mean 0.000 +- 0.000      mean 1.000 +- 0.000    mean 92.4 +- 1.0 ms
+  load8_open_channel                 0.014, 0.044, 0.043      0.988, 0.965, 0.959    53.4 ms, 53.0 ms, 58.8 ms
+                                     mean 0.034 +- 0.017      mean 0.971 +- 0.015    mean 55.1 +- 3.3 ms
+  salt_on_attack                     0.570, 0.491, 0.514      0.511, 0.543, 0.541    -0.4 ms, 0.1 ms, -0.0 ms
+                                     mean 0.525 +- 0.041      mean 0.532 +- 0.018    mean -0.1 +- 0.3 ms
+
+READING:
+  * Separability (AUC/AP) is essentially perfectly reproducible -- every headline
+    claim reproduced in all repetitions.
+  * The ABSOLUTE effect size is stable within a protocol but NOT across sessions
+    (the image attack measured 46.7 ms originally and ~66 ms here: 41% apart).
+    Quote effect sizes as RANGES, never as one number.
+==============================================================================
+done
+
+==============================================================================
+EXP3 / REPEATABILITY - IMAGE (K=3, server restarted each rep)
+==============================================================================
+design: each repetition restarts the vLLM server; image seeds fixed across reps
+repetitions: 3   (each repetition RESTARTS the vLLM server)
+
+  measurement                        AUC per rep              AP per rep             delta p50 per rep
+  salt_on_attack                     0.000, 0.000, 0.000      1.000, 1.000, 1.000    65.3 ms, 65.9 ms, 66.6 ms
+                                     mean 0.000 +- 0.000      mean 1.000 +- 0.000    mean 65.9 +- 0.7 ms
+  same_image_different_prompt        0.000, 0.000, 0.000      1.000, 1.000, 1.000    64.9 ms, 66.8 ms, 66.7 ms
+                                     mean 0.000 +- 0.000      mean 1.000 +- 0.000    mean 66.1 +- 1.1 ms
+
+READING:
+  * Separability (AUC/AP) is essentially perfectly reproducible -- every headline
+    claim reproduced in all repetitions.
+  * The ABSOLUTE effect size is stable within a protocol but NOT across sessions
+    (the image attack measured 46.7 ms originally and ~66 ms here: 41% apart).
+    Quote effect sizes as RANGES, never as one number.
+==============================================================================
+done
+
+==============================================================================
+EXP3 / REPEATABILITY - AUDIO (K=3, server restarted each rep)
+==============================================================================
+design: 
+repetitions: 3   (each repetition RESTARTS the vLLM server)
+
+  measurement                        AUC per rep              AP per rep             delta p50 per rep
+  salt_on_attack                     0.000, 0.062, 0.000      1.000, 0.968, 1.000    55.6 ms, 56.2 ms, 59.9 ms
+                                     mean 0.021 +- 0.036      mean 0.989 +- 0.019    mean 57.2 +- 2.3 ms
+
+  FLAC (lossless container) reuses the original clip's entry, per rep: [False, False, False]
+
+READING:
+  * Separability (AUC/AP) is essentially perfectly reproducible -- every headline
+    claim reproduced in all repetitions.
+  * The ABSOLUTE effect size is stable within a protocol but NOT across sessions
+    (the image attack measured 46.7 ms originally and ~66 ms here: 41% apart).
+    Quote effect sizes as RANGES, never as one number.
+==============================================================================
+done
+

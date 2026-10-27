@@ -1,0 +1,93 @@
+HOW TO (RE-)RUN THE GPU EXPERIMENTS — UPDATED
+=============================================
+
+STATUS: exp3 has been RUN for all three channels. See STATUS.md for the results
+summary and FINDINGS.md for the full write-up with the real numbers.
+The commands below are for re-running / extending, not for doing it the first time.
+
+Environment used (worked from this Mac):
+    modal 1.4.1, authenticated as "ruiling", volume "pcache-out" already existed.
+    NOTE: an earlier handoff said Modal was unreachable. That was true of the cloud
+    sandbox it was written from, not of this Mac. `modal volume list` worked here.
+
+0) One-time setup (only if needed):
+     pip3 install modal
+     modal token new
+
+1) Run (from the project directory):
+     modal run modal_exp3_ttft.py::smoke          # ~L4,   cheap, validates the harness
+     modal run modal_exp3_ttft.py                 # ~L4,   text   TTFT hit/miss + salt
+     modal run modal_exp3_ttft.py::mm             # ~A100, image  TTFA + salt
+     modal run modal_exp3_ttft.py::audio          # ~A100, audio  TTFA + salt + re-encode
+     modal run modal_exp3_ttft.py::mm_mechanism   # ~A100, the two decisive controls
+
+   Useful env knobs (export before `modal run`):
+     N=30              trials per condition (defaults: text 30, mm 25, audio 20, mech 12)
+     LENGTHS=16,64,256,1024   text prefix lengths in tokens
+     FLOOD=400         images used to evict the encoder cache in mm_mechanism
+     TEXT_MODEL=...  MM_MODEL=...  AUDIO_MODEL=...
+
+   FYI audio uses Qwen/Qwen2-Audio-7B-Instruct by default and works.
+
+2) Pull the JSON off the Modal volume:
+     modal volume get pcache-out exp3_text.json .
+     modal volume get pcache-out exp3_mm.json .
+     modal volume get pcache-out exp3_audio.json .
+     modal volume get pcache-out exp3_mm_mechanism.json .
+
+3) Turn the JSON into the RESULTS_exp3_*.txt transcripts:
+     python3 summarize_exp3.py
+
+4) Free offline regression tests for the harness (no GPU, no Modal):
+     python3 test_harness_offline.py
+   (needs numpy + scipy; blake3 only for verify_against_source.py)
+
+5) Re-verify the hash/multimodal claims against the real vLLM source:
+     git clone --depth 1 --branch v0.11.0 https://github.com/vllm-project/vllm.git .vllm_src
+     VLLM_SRC=.vllm_src python3 verify_against_source.py     # expect "ALL BYTE-EQUAL"
+
+THINGS THAT WILL BITE YOU (already fixed in the harness — do not reintroduce):
+  * vllm==0.11.0 declares only `transformers >= 4.55.2`, so a bare pip install pulls
+    transformers 5.x and the server dies at startup with
+    "Qwen2Tokenizer has no attribute all_special_tokens_extended". Pin 4.55.2.
+  * Audio needs the `vllm[audio]` extra, else every request is HTTP 500
+    "Please install vllm[audio] for audio support".
+  * Image.from_registry("vllm/vllm-openai:v0.11.0") does NOT work on Modal:
+    "unable to determine the version of Python installed in the Image".
+  * The chat template's first block is shared by every request, so a fresh-prefix
+    "miss" caches 16 tokens, not 0. Never assert cached_tokens == 0 for a miss.
+  * Prime the attacker's cache_salt before the measured probes, and take each
+    measured probe ONCE — otherwise you measure ordering effects or the attacker
+    hitting its own cache, both of which look exactly like a leak.
+
+-------------------------------------------------------------------
+SECOND PASS (all run; add these to the command list above)
+-------------------------------------------------------------------
+     modal run modal_exp3_ttft.py::text2          # ~L4,   2048/4096 scaling + concurrent load
+     modal run modal_exp3_ttft.py::text_recovery  # ~L4,   end-to-end live secret recovery
+     modal run modal_exp3_ttft.py::mm_extra       # ~A100, prompt-independence + 1px + deep flood
+     modal run modal_exp3_ttft.py::audio_extra    # ~A100, FLAC/OGG/MP3 container tests
+     modal run modal_exp3_ttft.py::mm_evict       # ~A100, separates the two unsalted caches
+
+   Then:
+     modal volume get pcache-out exp3_text2.json .
+     modal volume get pcache-out exp3_text_recovery.json .
+     modal volume get pcache-out exp3_mm_extra.json .
+     modal volume get pcache-out exp3_audio_extra.json .
+     modal volume get pcache-out exp3_mm_evict.json .
+     python3 summarize_exp3.py        # -> RESULTS_exp3_*.txt
+     python3 analyze_rigor.py         # -> RESULTS_exp3_rigor.txt + rigor_summary.json
+                                      #    (bootstrap CIs; turns "salt ON" into a BOUND)
+
+   Extra env knobs for the second pass:
+     N2=60     trials per condition for text2 (default 60)
+     LENGTHS2=16,64,256,1024,2048,4096
+     V=12      candidates per secret field
+     TRIALS=6  recovery trials
+     FLOOD=800 images used to evict the encoder cache
+
+   ONE MORE TRAP, found the hard way: in the recovery experiment every trial must use
+   FRESH template material (HEAD / LONG* runs). If trials share a template, the attacker's
+   own probes from trial 0 are already cached, every candidate comes back as a self-hit,
+   and the attack "fails" at 0/6 -- which looks like a negative result but is purely
+   self-inflicted. With fresh material per trial it recovers 6/6.

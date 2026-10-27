@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.budget.lock
+results/**/server*.log
+
+# Commit only the completed study artifacts shipped here.
+!results/runs/
+!results/runs/**
+results/launch-*.log
+results/budget_ledger.json
+results/receipt-*.json
+*.log

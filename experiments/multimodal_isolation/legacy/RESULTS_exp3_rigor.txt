@@ -1,0 +1,139 @@
+========================================================================================
+TEXT (raw samples) -- is 'cache_salt closes the channel' a BOUND or a failed test?
+========================================================================================
+  prefix    16 tokens | SALT ON                  n=60/60
+      p50 delta    -0.06 ms   95% CI [-0.39, +0.42]
+      AUC           0.502      95% CI [0.397, 0.606]
+      one-sided KS p (the paper's test, alternative='greater') = 0.767
+      perfect-detector margin (min_b - max_a) = -4.94 ms  -> no threshold is error-free
+      ==> residual leak bounded by 0.42 ms = 24.2% of this channel's open effect (1.7 ms)
+      ground truth: cached KV tokens 16.0 vs 16.0 -> IDENTICAL (KV cache properly isolated)
+      open-channel effect at this length: +1.73 ms
+
+  prefix    64 tokens | SALT ON                  n=60/60
+      p50 delta    +0.05 ms   95% CI [-0.32, +0.38]
+      AUC           0.499      95% CI [0.395, 0.605]
+      one-sided KS p (the paper's test, alternative='greater') = 0.444
+      perfect-detector margin (min_b - max_a) = -5.60 ms  -> no threshold is error-free
+      ==> residual leak bounded by 0.38 ms = 9.7% of this channel's open effect (4.0 ms)
+      ground truth: cached KV tokens 16.0 vs 16.0 -> IDENTICAL (KV cache properly isolated)
+      open-channel effect at this length: +3.95 ms
+
+  prefix   256 tokens | SALT ON                  n=60/60
+      p50 delta    +0.18 ms   95% CI [-0.46, +0.85]
+      AUC           0.459      95% CI [0.355, 0.561]
+      one-sided KS p (the paper's test, alternative='greater') = 0.261
+      perfect-detector margin (min_b - max_a) = -17.46 ms  -> no threshold is error-free
+      ==> residual leak bounded by 0.85 ms = 7.5% of this channel's open effect (11.3 ms)
+      ground truth: cached KV tokens 16.0 vs 16.0 -> IDENTICAL (KV cache properly isolated)
+      open-channel effect at this length: +11.31 ms
+
+  prefix  1024 tokens | SALT ON                  n=60/60
+      p50 delta    +0.31 ms   95% CI [-0.45, +0.97]
+      AUC           0.453      95% CI [0.351, 0.559]
+      one-sided KS p (the paper's test, alternative='greater') = 0.346
+      perfect-detector margin (min_b - max_a) = -21.45 ms  -> no threshold is error-free
+      ==> residual leak bounded by 0.97 ms = 1.0% of this channel's open effect (94.2 ms)
+      ground truth: cached KV tokens 16.0 vs 16.0 -> IDENTICAL (KV cache properly isolated)
+      open-channel effect at this length: +94.17 ms
+
+  prefix  2048 tokens | SALT ON                  n=60/60
+      p50 delta    +0.74 ms   95% CI [-0.33, +1.83]
+      AUC           0.446      95% CI [0.342, 0.551]
+      one-sided KS p (the paper's test, alternative='greater') = 0.134
+      perfect-detector margin (min_b - max_a) = -10.98 ms  -> no threshold is error-free
+      ==> residual leak bounded by 1.83 ms = 0.8% of this channel's open effect (232.6 ms)
+      ground truth: cached KV tokens 16.0 vs 16.0 -> IDENTICAL (KV cache properly isolated)
+      open-channel effect at this length: +232.64 ms
+
+  prefix  4096 tokens | SALT ON                  n=60/60
+      p50 delta    +0.52 ms   95% CI [-1.03, +1.81]
+      AUC           0.459      95% CI [0.357, 0.559]
+      one-sided KS p (the paper's test, alternative='greater') = 0.551
+      perfect-detector margin (min_b - max_a) = -14.32 ms  -> no threshold is error-free
+      ==> residual leak bounded by 1.81 ms = 0.4% of this channel's open effect (492.9 ms)
+      ground truth: cached KV tokens 16.0 vs 16.0 -> IDENTICAL (KV cache properly isolated)
+      open-channel effect at this length: +492.87 ms
+
+========================================================================================
+END-TO-END LIVE SECRET RECOVERY (TTFT only; no oracle access)
+========================================================================================
+  design: victim prompt = HEAD [A] LONG1 [B] LONG2 [C] LONG3; the attacker knows the fixed parts and only that each field is one of V candidates; each candidate is probed EXACTLY ONCE (a second probe would hit the attacker's own cache entry) and argmin(TTFT) wins the field
+  V=12 candidates/field x 3 fields = 36 queries/trial; naive joint search space = 1728 (48x more)
+  SALT_OFF fields recovered 3/9   trials fully correct 1/3   median margin 0.5 ms
+  SALT_ON  fields recovered 2/9   trials fully correct 0/3   median margin 0.3 ms
+  salt-ON is the negative control; chance = 0.75 fields per 3-field trial
+
+========================================================================================
+DETECTOR UNDER CONCURRENT LOAD (real servers are not idle)
+========================================================================================
+  load_0       n=20  hit p50   56.81 ms  miss p50  150.18 ms  delta  +93.37 ms  KS 1.000  AUC 0.000  overlap 0.000
+  load_8       n=20  hit p50  126.43 ms  miss p50  175.06 ms  delta  +48.63 ms  KS 1.000  AUC 0.000  overlap 0.092
+  load_32      n=20  hit p50  474.31 ms  miss p50  577.48 ms  delta +103.17 ms  KS 0.950  AUC 0.048  overlap 0.170
+
+========================================================================================
+IMAGE second pass
+========================================================================================
+  same image, DIFFERENT prompt text              n=15/15
+      p50 delta   +30.20 ms   95% CI [+29.33, +31.14]
+      AUC           0.000      95% CI [0.000, 0.000]
+      one-sided KS p (the paper's test, alternative='greater') = 6.45e-09
+      perfect-detector margin (min_b - max_a) = +26.89 ms  -> an error-free threshold EXISTS
+      ground truth: cached KV tokens 0.0 vs 0.0
+
+  one pixel different                            n=15/15
+      p50 delta    +0.14 ms   95% CI [-0.63, +1.67]
+      AUC           0.382      95% CI [0.187, 0.596]
+      one-sided KS p (the paper's test, alternative='greater') = 0.352
+      perfect-detector margin (min_b - max_a) = -156.77 ms  -> no threshold is error-free
+      ground truth: cached KV tokens 0.0 vs 0.0
+
+========================================================================================
+IMAGE: deep encoder-cache eviction (does the residual go to ~0?)
+========================================================================================
+  before flood: victim image   32.82 ms | after flood   55.56 ms | never-sent control   61.94 ms
+  attacker advantage 29.1 ms -> 6.4 ms   (residual fraction 21.9%)
+  sanity, same-tenant reuse after the flood: warm 34.6 ms -> hit 29.1 ms (cached tokens 160.0)
+
+========================================================================================
+AUDIO: how much re-encoding does the channel survive?
+========================================================================================
+  template baseline (never-sent clip) : cached_tokens 16.0
+  identical WAV re-sent               : cached_tokens 48.0
+  (cached_tokens above the baseline == it reused the ORIGINAL clip's entry)
+  flac_lossless_same_pcm              : cached_tokens 16.0  reuses original entry: False
+  ogg_vorbis_lossy                    : cached_tokens 16.0  reuses original entry: False
+  mp3_lossy                           : cached_tokens 16.0  reuses original entry: False
+
+wrote rigor_summary.json
+========================================================================================
+DETECTOR CHARACTERISATION (Gu et al. Fig-4 style)
+========================================================================================
+  text 16 tok, defense OFF                 ROC AUC 0.863  PR AUC 0.860 (base 0.500)  best thr   50.1 ms -> TPR 0.77 / FPR 0.13 (precision 0.85)
+  text 16 tok, defense ON                  ROC AUC 0.498  PR AUC 0.528 (base 0.500)  best thr   50.4 ms -> TPR 0.27 / FPR 0.20 (precision 0.57)
+  text 64 tok, defense OFF                 ROC AUC 1.000  PR AUC 1.000 (base 0.500)  best thr   51.7 ms -> TPR 1.00 / FPR 0.00 (precision 1.00)
+  text 64 tok, defense ON                  ROC AUC 0.501  PR AUC 0.518 (base 0.500)  best thr   53.3 ms -> TPR 0.35 / FPR 0.23 (precision 0.60)
+  text 256 tok, defense OFF                ROC AUC 1.000  PR AUC 1.000 (base 0.500)  best thr   55.8 ms -> TPR 1.00 / FPR 0.00 (precision 1.00)
+  text 256 tok, defense ON                 ROC AUC 0.541  PR AUC 0.576 (base 0.500)  best thr   61.8 ms -> TPR 0.22 / FPR 0.07 (precision 0.76)
+  text 1024 tok, defense OFF               ROC AUC 1.000  PR AUC 1.000 (base 0.500)  best thr   74.3 ms -> TPR 1.00 / FPR 0.00 (precision 1.00)
+  text 1024 tok, defense ON                ROC AUC 0.547  PR AUC 0.590 (base 0.500)  best thr  151.6 ms -> TPR 0.33 / FPR 0.20 (precision 0.62)
+  text 2048 tok, defense OFF               ROC AUC 1.000  PR AUC 1.000 (base 0.500)  best thr   82.8 ms -> TPR 1.00 / FPR 0.00 (precision 1.00)
+  text 2048 tok, defense ON                ROC AUC 0.554  PR AUC 0.552 (base 0.500)  best thr  295.8 ms -> TPR 0.52 / FPR 0.33 (precision 0.61)
+  text 4096 tok, defense OFF               ROC AUC 1.000  PR AUC 1.000 (base 0.500)  best thr   79.3 ms -> TPR 1.00 / FPR 0.00 (precision 1.00)
+  text 4096 tok, defense ON                ROC AUC 0.541  PR AUC 0.541 (base 0.500)  best thr  568.9 ms -> TPR 0.77 / FPR 0.67 (precision 0.53)
+
+========================================================================================
+IMAGE DETECTOR CHARACTERISATION
+========================================================================================
+  image, same image / different prompt     ROC AUC 1.000  PR AUC 1.000 (base 0.500)  best thr   33.0 ms -> TPR 1.00 / FPR 0.00 (precision 1.00)
+  image, one pixel different               ROC AUC 0.618  PR AUC 0.655 (base 0.500)  best thr   60.4 ms -> TPR 0.40 / FPR 0.13 (precision 0.75)
+
+========================================================================================
+DETECTOR CHARACTERISATION UNDER LOAD
+========================================================================================
+  load 0 threads, 1024 tok                   (no raw samples)
+  load 8 threads, 1024 tok                   (no raw samples)
+  load 32 threads, 1024 tok                  (no raw samples)
+  (nothing to report)
+
+wrote detector_characterisation.json

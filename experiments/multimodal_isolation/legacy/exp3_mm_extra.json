@@ -1,0 +1,170 @@
+{
+  "meta": {
+    "vllm_version": "0.11.0",
+    "block_size": 16,
+    "model": "Qwen/Qwen2.5-VL-3B-Instruct",
+    "n_per_arm": 15,
+    "flood_images": 1200
+  },
+  "same_image_different_prompt": {
+    "victim_prompt_example": "summarise this figure in detail for the report number i",
+    "attacker_prompt_example": "what objects appear here? question id i",
+    "victim_image_attacker_prompt": {
+      "n": 15,
+      "p50_ms": 31.201181999989558,
+      "p95_ms": 32.77374820000887,
+      "raw_ttft_ms": [
+        32.693896000012046,
+        30.978941999990184,
+        31.201181999989558,
+        31.272887999989507,
+        32.96007000000145,
+        32.09886000001916,
+        31.014685999991798,
+        31.492952999997215,
+        31.473489999996218,
+        30.876517999985253,
+        30.898426000021573,
+        30.794063999991295,
+        31.43010899998444,
+        31.089825999998766,
+        30.712000999983502
+      ],
+      "cached_tokens_p50": 0.0,
+      "cached_tokens_max": 0.0,
+      "frac_trials_with_cache_hit": 0.0,
+      "queried_tokens_p50": 174.0,
+      "cache_hit_token_rate_p50": 0.0
+    },
+    "never_sent_image_attacker_prompt": {
+      "n": 15,
+      "p50_ms": 61.39858999998182,
+      "p95_ms": 63.01686419998305,
+      "raw_ttft_ms": [
+        62.859356999979354,
+        62.23288900000057,
+        61.39858999998182,
+        59.85038900001882,
+        62.75901999998723,
+        63.38438099999166,
+        60.41927799998348,
+        60.8710799999983,
+        61.73233699999514,
+        61.065264999996316,
+        60.454936000013504,
+        61.871293999985255,
+        60.25327300000072,
+        60.797269999994796,
+        62.22391200000743
+      ],
+      "cached_tokens_p50": 0.0,
+      "cached_tokens_max": 0.0,
+      "frac_trials_with_cache_hit": 0.0,
+      "queried_tokens_p50": 174.0,
+      "cache_hit_token_rate_p50": 0.0
+    },
+    "detector": {
+      "ks_stat": 1.0,
+      "ks_p": 1.2893450075787698e-08,
+      "auc": 0.0,
+      "kde_overlap": 3.9412271249606425e-156,
+      "cached_content_p50_ms": 31.201181999989558,
+      "unseen_p50_ms": 61.39858999998182,
+      "cached_content_p95_ms": 32.77374820000887,
+      "unseen_p95_ms": 63.01686419998305,
+      "delta_p50_ms": 30.197407999992265
+    },
+    "kv_cached_tokens_identical": true
+  },
+  "one_pixel_different": {
+    "victim_image_resubmitted": {
+      "n": 15,
+      "p50_ms": 60.63143400001536,
+      "p95_ms": 108.89953609998867,
+      "raw_ttft_ms": [
+        62.736208999979226,
+        60.16997300000071,
+        60.34267799998361,
+        61.01076999999577,
+        216.61396600001126,
+        61.34595199998216,
+        60.63143400001536,
+        59.88284700001145,
+        61.550525000001244,
+        58.86884800000303,
+        61.02327800002172,
+        61.64668299999221,
+        60.48552699999732,
+        59.87570899998218,
+        60.39528799999516
+      ],
+      "cached_tokens_p50": 0.0,
+      "cached_tokens_max": 0.0,
+      "frac_trials_with_cache_hit": 0.0,
+      "queried_tokens_p50": 166.0,
+      "cache_hit_token_rate_p50": 0.0
+    },
+    "never_sent_image": {
+      "n": 15,
+      "p50_ms": 60.76653599998849,
+      "p95_ms": 65.22414719998721,
+      "raw_ttft_ms": [
+        61.265024000022095,
+        60.720927999994956,
+        60.679966000009244,
+        60.41830900002765,
+        66.42675000000509,
+        63.1007650000015,
+        61.13180399998441,
+        61.752832999985685,
+        60.50252100001785,
+        59.84232299999803,
+        60.24884400000019,
+        63.014306000013676,
+        60.76653599998849,
+        60.76316200000065,
+        64.70874599997956
+      ],
+      "cached_tokens_p50": 0.0,
+      "cached_tokens_max": 0.0,
+      "frac_trials_with_cache_hit": 0.0,
+      "queried_tokens_p50": 166.0,
+      "cache_hit_token_rate_p50": 0.0
+    },
+    "detector": {
+      "ks_stat": 0.2666666666666667,
+      "ks_p": 0.6781382270680966,
+      "auc": 0.38222222222222224,
+      "kde_overlap": 0.10935835075974876,
+      "one_pixel_off_p50_ms": 60.63143400001536,
+      "unseen_p50_ms": 60.76653599998849,
+      "one_pixel_off_p95_ms": 108.89953609998867,
+      "unseen_p95_ms": 65.22414719998721,
+      "delta_p50_ms": 0.13510199997313066
+    },
+    "identical_resend_for_contrast": null,
+    "reading": "a 1-pixel change must look like an unseen image (AUC ~0.5, delta ~0); compared against the byte-identical resend measured in exp3_mm.json"
+  },
+  "deep_eviction": {
+    "before_flood_victim_image": {
+      "ttft_ms": 32.81549999999811,
+      "cached_tokens": 0.0
+    },
+    "after_flood_victim_image": {
+      "ttft_ms": 55.55596400000695,
+      "cached_tokens": 0.0
+    },
+    "never_sent_control": {
+      "ttft_ms": 61.94211299998642,
+      "cached_tokens": 0.0
+    },
+    "advantage_before_ms": 29.12661299998831,
+    "advantage_after_ms": 6.3861489999794685,
+    "residual_fraction": 0.21925477569197735,
+    "sanity_same_tenant_reuse_still_works": {
+      "warm_ttft_ms": 34.59174299996448,
+      "hit_ttft_ms": 29.05697900001769,
+      "hit_cached_tokens": 160.0
+    }
+  }
+}

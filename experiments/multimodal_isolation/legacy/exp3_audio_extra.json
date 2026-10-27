@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "vllm_version": "0.11.0",
+    "block_size": 16,
+    "model": "Qwen/Qwen2-Audio-7B-Instruct",
+    "clip_seconds": 1.0,
+    "sample_rate": 16000
+  },
+  "baseline_identical_wav_resend": {
+    "n": 1,
+    "p50_ms": 41.16462799998999,
+    "p95_ms": 41.16462799998999,
+    "raw_ttft_ms": [
+      41.16462799998999
+    ],
+    "cached_tokens_p50": 48.0,
+    "cached_tokens_max": 48.0,
+    "frac_trials_with_cache_hit": 1.0,
+    "queried_tokens_p50": 56.0,
+    "cache_hit_token_rate_p50": 0.8571428571428571,
+    "meaning": "reuses the original entry"
+  },
+  "baseline_never_sent_wav": {
+    "n": 1,
+    "p50_ms": 100.74961000000826,
+    "p95_ms": 100.74961000000826,
+    "raw_ttft_ms": [
+      100.74961000000826
+    ],
+    "cached_tokens_p50": 16.0,
+    "cached_tokens_max": 16.0,
+    "frac_trials_with_cache_hit": 1.0,
+    "queried_tokens_p50": 56.0,
+    "cache_hit_token_rate_p50": 0.2857142857142857,
+    "meaning": "template block only"
+  },
+  "reencode_variants": {
+    "flac_lossless_same_pcm": {
+      "first_send_cached_tokens": 16.0,
+      "first_send_ttft_ms": 104.26736200000164,
+      "self_repeat_cached_tokens": 48.0,
+      "reuses_original_entry": false,
+      "template_baseline_cached_tokens": 16.0
+    },
+    "ogg_vorbis_lossy": {
+      "first_send_cached_tokens": 16.0,
+      "first_send_ttft_ms": 94.52129300001388,
+      "self_repeat_cached_tokens": 48.0,
+      "reuses_original_entry": false,
+      "template_baseline_cached_tokens": 16.0
+    },
+    "mp3_lossy": {
+      "first_send_cached_tokens": 16.0,
+      "first_send_ttft_ms": 92.51913599999284,
+      "self_repeat_cached_tokens": 48.0,
+      "reuses_original_entry": false,
+      "template_baseline_cached_tokens": 16.0
+    }
+  }
+}

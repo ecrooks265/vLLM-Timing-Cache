@@ -1,0 +1,22 @@
+==============================================================================
+EXP3 / AUDIO CHANNEL - TTFA timing on self-hosted vLLM v0.11.0
+==============================================================================
+model : Qwen/Qwen2-Audio-7B-Instruct
+clip  : 1.0 s of 16 kHz float32 noise -> PCM_16 WAV data: URL
+
+IDENTICAL BYTES (defense OFF):
+  hit  p50     38.5 ms   cached_tokens_p50     48
+  miss p50     87.5 ms   cached_tokens_p50     16
+  detector: delta   49.0 ms  KS 1.000  p 1.45e-11  AUC 0.000  overlap 0.000
+  null floor (same condition): KS 0.328  overlap 0.705
+
+DECODE-DETERMINISM (exp2's question, answered end-to-end):
+  what matters is whether the FIRST send of a re-encode reuses the ORIGINAL clip's
+  cached entry -- repeats always hit themselves, so a median over repeats is meaningless.
+  template baseline (an unseen clip)              : cached_tokens 16
+  identical bytes, first send                    : cached_tokens 48
+  soundfile decode round-trip, first send        : cached_tokens 48.0  -> reuses original entry: True
+  resampled 16k -> 22k, first send               : cached_tokens 16.0  -> reuses original entry: False
+  round-trip self-repeat / resample self-repeat  : cached_tokens 48.0 / 64.0
+==============================================================================
+done

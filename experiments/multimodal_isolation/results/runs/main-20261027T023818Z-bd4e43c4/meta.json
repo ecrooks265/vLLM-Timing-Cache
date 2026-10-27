@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "versions": {
+    "vllm": "0.11.0",
+    "transformers": "4.55.2",
+    "requests": "2.34.2"
+  },
+  "start_epoch": 1793068698.3419535,
+  "timing_metric": "first_content_ms",
+  "instrumented": false,
+  "scope": "image_membership_and_reuse_only",
+  "status": "complete",
+  "model_cache_revision": "66285546d2b821cf421d4f5eb2576359d3770cd3",
+  "source_sha256": {
+    "__init__.py": "2780c5c55c743acb66813d9fa4331cb34fa74af557db3aba950c216d69a25764",
+    "protocol.py": "bac4ffeb3430c945a3ebb91053ddacbccacc545828bcb5e000a6540fa443951c",
+    "runner.py": "c8cf41e798222be84050457aaeb2ce928cb1476ca5faba31753befc9cf49dbc9"
+  },
+  "end_epoch": 1793070145.5259469,
+  "requests": 1704,
+  "invalid": 0
+}

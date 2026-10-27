@@ -1,0 +1,21 @@
+==============================================================================
+EXP3 / AUDIO SECOND PASS - how much re-encoding does the channel survive?
+==============================================================================
+model : Qwen/Qwen2-Audio-7B-Instruct
+What matters is whether the FIRST send of a variant reuses the ORIGINAL clip's entry
+(cached tokens clearly above the template baseline); self-repeats always hit themselves.
+
+  never-sent clip (baseline) : cached_tokens 16
+  identical WAV re-sent      : cached_tokens 48
+
+  flac_lossless_same_pcm     : first-send cached_tokens 16.0  reuses original: False
+  ogg_vorbis_lossy           : first-send cached_tokens 16.0  reuses original: False
+  mp3_lossy                  : first-send cached_tokens 16.0  reuses original: False
+
+READING: only a byte-identical file reuses the original entry. Even a LOSSLESS
+container change (WAV -> FLAC) breaks it, because the decode path quantises
+differently (verified locally: the decoded arrays differ by 3.05e-05, which is
+already enough to change the media key). The audio channel needs a bit-identical
+decode path, so the attacker must hold the identical file.
+==============================================================================
+done

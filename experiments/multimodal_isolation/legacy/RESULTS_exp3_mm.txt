@@ -1,0 +1,23 @@
+==============================================================================
+EXP3 / IMAGE CHANNEL - TTFA timing on self-hosted vLLM v0.11.0
+==============================================================================
+model      : Qwen/Qwen2.5-VL-3B-Instruct
+image      : 336x336x3 random uint8 PNG, sent as a base64 data: URL
+hit        : byte-identical PNG re-sent
+miss       : fresh random image every call
+
+REPEATED IMAGE (defense OFF):
+  hit  p50     36.6 ms   cached_tokens_p50    160   frac_trials_hit 1.00
+  miss p50     85.0 ms   cached_tokens_p50     16   frac_trials_hit 1.00
+  detector: delta   48.4 ms  KS 1.000  p 1.58e-14  AUC 0.000  overlap 0.000
+
+DEFENSE ON (per-tenant cache_salt):
+  victim same-salt hit cached_tokens_p50 160
+  attacker vs victim image   cached_tokens_p50 16
+  attacker vs unseen  image  cached_tokens_p50 16
+  detector: delta   46.7 ms  KS 1.000  p 1.58e-14  AUC 0.000  overlap 0.000
+  null floor (same condition): KS 0.305  overlap 0.724
+
+salt cost (attacker loses reuse): 2.6 ms
+==============================================================================
+done

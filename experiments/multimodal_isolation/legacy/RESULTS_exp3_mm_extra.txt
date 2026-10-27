@@ -1,0 +1,25 @@
+==============================================================================
+EXP3 / IMAGE SECOND PASS - what does the attacker actually need to know?
+==============================================================================
+model : Qwen/Qwen2.5-VL-3B-Instruct
+Every probe uses a FRESH cache_salt, so both arms of each comparison are KV-cache misses.
+
+A. SAME image, DIFFERENT prompt text (does the attacker need the victim's prompt?)
+   victim's image + attacker's own text : p50   31.20 ms  cachedKV 0
+   never-sent image + attacker's text  : p50   61.40 ms  cachedKV 0
+   => delta 30.2 ms  KS 1.000  AUC 0.000  (KV cached tokens identical: True)
+   => the attacker needs ONLY the image; the multimodal channel is stronger than text.
+
+B. ONE PIXEL different (is the channel exact-content only?)
+   1-pixel-changed image : p50   60.63 ms
+   never-sent image      : p50   60.77 ms
+   => delta 0.1 ms  AUC 0.382  -> indistinguishable: EXACT content only
+
+C. DEEP EVICTION (1200 distinct images) - is the residual gone?
+   before flood   32.82 ms | after flood   55.56 ms | never-sent control   61.94 ms
+   attacker advantage 29.1 -> 6.4 ms   (residual 21.9%)
+   sanity: same-tenant reuse still works after the flood (hit cached tokens 160)
+   A residual that does NOT shrink as the flood grows means a second, larger cache is
+   still holding the image -- the 4 GiB mm processor cache. See RESULTS_exp3_mm_evict.txt.
+==============================================================================
+done

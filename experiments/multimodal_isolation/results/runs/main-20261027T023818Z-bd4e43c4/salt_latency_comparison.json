@@ -1,0 +1,8 @@
+{
+  "matched_distinct_minus_shared_cross_tenant_ms": 0.7070164999731787,
+  "ci95_ms": [
+    -3.3544075000122575,
+    3.5077210001190906
+  ],
+  "interpretation": "Separate randomized sessions. A near-zero difference does not establish equivalence."
+}

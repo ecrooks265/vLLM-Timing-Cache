@@ -169,3 +169,7 @@ ground-truth hit/miss labeling are implemented enough to unit-test.
 Run only against **your own** vLLM instance, or external APIs **you are
 authorized to test**. The external-API path is gated behind an explicit
 `--allow-external` flag and is not wired to any provider by default.
+
+## Multimodal cache isolation extension
+
+Ruilin’s [multimodal study and results](docs/MULTIMODAL_RESULTS.md) adds a completed vLLM 0.11.0 image-isolation experiment, reuse-latency measurements, runnable scripts and raw data, with historical text/audio evidence kept separate.

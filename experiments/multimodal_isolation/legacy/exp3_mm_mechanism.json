@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "vllm_version": "0.11.0",
+    "block_size": 16,
+    "model": "Qwen/Qwen2.5-VL-3B-Instruct",
+    "n_per_arm": 12,
+    "flood_images": 400,
+    "design": "fresh cache_salt on every probe -> both arms are KV-cache misses"
+  },
+  "processor_cache_on": {
+    "victim_image": {
+      "n": 12,
+      "p50_ms": 40.080498500003614,
+      "p95_ms": 42.0089570500096,
+      "cached_tokens_p50": 0.0,
+      "cached_tokens_max": 0.0,
+      "frac_trials_with_cache_hit": 0.0,
+      "queried_tokens_p50": 166.0,
+      "cache_hit_token_rate_p50": 0.0
+    },
+    "never_sent_image": {
+      "n": 12,
+      "p50_ms": 82.59701250000262,
+      "p95_ms": 86.21059229998878,
+      "cached_tokens_p50": 0.0,
+      "cached_tokens_max": 0.0,
+      "frac_trials_with_cache_hit": 0.0,
+      "queried_tokens_p50": 166.0,
+      "cache_hit_token_rate_p50": 0.0
+    },
+    "detector": {
+      "ks_stat": 1.0,
+      "ks_p": 7.396023010506791e-07,
+      "auc": 0.0,
+      "kde_overlap": 4.345694361592018e-92,
+      "cached_content_p50_ms": 40.080498500003614,
+      "unseen_p50_ms": 82.59701250000262,
+      "cached_content_p95_ms": 42.0089570500096,
+      "unseen_p95_ms": 86.21059229998878,
+      "delta_p50_ms": 42.516513999999006
+    },
+    "cached_tokens_identical_both_arms": true
+  },
+  "encoder_cache_eviction": {
+    "before_flood_victim_image": {
+      "ttft_ms": 38.27098300001808,
+      "cached_tokens": 0.0
+    },
+    "after_flood_victim_image": {
+      "ttft_ms": 78.39027700003953,
+      "cached_tokens": 0.0
+    },
+    "never_sent_control": {
+      "ttft_ms": 85.5782799999929,
+      "cached_tokens": 0.0
+    },
+    "advantage_before_ms": 47.307296999974824,
+    "advantage_after_ms": 7.188002999953369,
+    "eviction_removed_the_advantage": true
+  },
+  "processor_cache_off": {
+    "victim_image": {
+      "n": 12,
+      "p50_ms": 50.15278149997471,
+      "p95_ms": 54.69341035000923,
+      "cached_tokens_p50": 0.0,
+      "cached_tokens_max": 0.0,
+      "frac_trials_with_cache_hit": 0.0,
+      "queried_tokens_p50": 166.0,
+      "cache_hit_token_rate_p50": 0.0
+    },
+    "never_sent_image": {
+      "n": 12,
+      "p50_ms": 91.23551499996552,
+      "p95_ms": 94.76770095000688,
+      "cached_tokens_p50": 0.0,
+      "cached_tokens_max": 0.0,
+      "frac_trials_with_cache_hit": 0.0,
+      "queried_tokens_p50": 166.0,
+      "cache_hit_token_rate_p50": 0.0
+    },
+    "detector": {
+      "ks_stat": 1.0,
+      "ks_p": 7.396023010506791e-07,
+      "auc": 0.0,
+      "kde_overlap": 2.403682230293765e-13,
+      "cached_content_p50_ms": 50.15278149997471,
+      "unseen_p50_ms": 91.23551499996552,
+      "cached_content_p95_ms": 54.69341035000923,
+      "unseen_p95_ms": 94.76770095000688,
+      "delta_p50_ms": 41.08273349999081
+    },
+    "cached_tokens_identical_both_arms": true
+  },
+  "conclusion": {
+    "advantage_survives_processor_cache_disabled": true,
+    "advantage_removed_by_encoder_cache_eviction": true,
+    "reading": "AUC<0.1 with --mm-processor-cache-gb 0 means the processor cache is NOT the mechanism, leaving the content-keyed EncoderCacheManager; eviction removing the advantage confirms it directly."
+  }
+}

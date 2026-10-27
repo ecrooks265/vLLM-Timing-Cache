@@ -1,0 +1,19 @@
+==============================================================================
+EXP3 / TEXT DETECTOR UNDER CONCURRENT LOAD (raw samples kept)
+==============================================================================
+model : Qwen/Qwen2.5-3B-Instruct   prefix 1024 tokens   30 trials per arm
+note  : timing-only requests; under load the per-request KV counter delta is meaningless because other requests advance the same counters
+
+  threads     hit p50  miss p50     delta      KS     AUC
+  0             59.7ms    152.6ms    +92.9ms   1.000   0.000
+  4             93.9ms    192.2ms    +98.4ms   1.000   0.000
+  8            153.1ms    186.6ms    +33.5ms   0.567   0.212
+  16           237.8ms    286.5ms    +48.7ms   0.433   0.244
+  32           394.4ms    605.5ms   +211.1ms   0.933   0.014
+
+READING: the channel persists under load but detectability is DEGRADED and
+RUN-DEPENDENT. An earlier, separate run found perfect separation at 8 threads
+(AUC 0.000); this one does not (KS 0.567, AUC 0.212). Do not claim the detector
+always separates under load -- claim it survives, with variable reliability.
+==============================================================================
+done

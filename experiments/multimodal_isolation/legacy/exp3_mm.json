@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "vllm_version": "0.11.0",
+    "block_size": 16,
+    "model": "Qwen/Qwen2.5-VL-3B-Instruct",
+    "n_trials": 25,
+    "image": "336x336x3 random uint8 PNG, sent as a base64 data: URL",
+    "hit_condition": "byte-identical PNG re-sent",
+    "miss_condition": "fresh random image every call"
+  },
+  "off": {
+    "hit_repeated_image": {
+      "n": 25,
+      "p50_ms": 36.563716999978624,
+      "p95_ms": 38.607575200012434,
+      "cached_tokens_p50": 160.0,
+      "cached_tokens_max": 160.0,
+      "frac_trials_with_cache_hit": 1.0,
+      "queried_tokens_p50": 166.0,
+      "cache_hit_token_rate_p50": 0.963855421686747
+    },
+    "miss_fresh_image": {
+      "n": 25,
+      "p50_ms": 84.95218100000557,
+      "p95_ms": 88.9890780000087,
+      "cached_tokens_p50": 16.0,
+      "cached_tokens_max": 16.0,
+      "frac_trials_with_cache_hit": 1.0,
+      "queried_tokens_p50": 166.0,
+      "cache_hit_token_rate_p50": 0.0963855421686747
+    },
+    "attacker_detector_hit_vs_miss": {
+      "ks_stat": 1.0,
+      "ks_p": 1.582145720489723e-14,
+      "auc": 0.0,
+      "kde_overlap": 2.920440016225398e-76,
+      "hit_p50_ms": 36.563716999978624,
+      "miss_p50_ms": 84.95218100000557,
+      "hit_p95_ms": 38.607575200012434,
+      "miss_p95_ms": 88.9890780000087,
+      "delta_p50_ms": 48.38846400002694
+    }
+  },
+  "on": {
+    "victim_same_salt_hit": {
+      "n": 25,
+      "p50_ms": 38.44421099998385,
+      "p95_ms": 41.390537799992444,
+      "cached_tokens_p50": 160.0,
+      "cached_tokens_max": 160.0,
+      "frac_trials_with_cache_hit": 1.0,
+      "queried_tokens_p50": 166.0,
+      "cache_hit_token_rate_p50": 0.963855421686747
+    },
+    "attacker_probe_cached_image": {
+      "n": 25,
+      "p50_ms": 39.14976800001568,
+      "p95_ms": 44.76341019999949,
+      "cached_tokens_p50": 16.0,
+      "cached_tokens_max": 16.0,
+      "frac_trials_with_cache_hit": 1.0,
+      "queried_tokens_p50": 166.0,
+      "cache_hit_token_rate_p50": 0.0963855421686747
+    },
+    "attacker_probe_unseen_image": {
+      "n": 25,
+      "p50_ms": 85.87577200000851,
+      "p95_ms": 89.91256120000344,
+      "cached_tokens_p50": 16.0,
+      "cached_tokens_max": 16.0,
+      "frac_trials_with_cache_hit": 1.0,
+      "queried_tokens_p50": 166.0,
+      "cache_hit_token_rate_p50": 0.0963855421686747
+    },
+    "attacker_detector_cached_vs_unseen": {
+      "ks_stat": 1.0,
+      "ks_p": 1.582145720489723e-14,
+      "auc": 0.0,
+      "kde_overlap": 5.666794497733034e-38,
+      "cached_content_p50_ms": 39.14976800001568,
+      "unseen_p50_ms": 85.87577200000851,
+      "cached_content_p95_ms": 44.76341019999949,
+      "unseen_p95_ms": 89.91256120000344,
+      "delta_p50_ms": 46.72600399999283
+    }
+  },
+  "null_floor_same_condition": {
+    "off_hit_vs_itself": {
+      "n_per_half": 12,
+      "reps": 50,
+      "ks_stat_mean": 0.30500000000000005,
+      "ks_stat_p95": 0.5,
+      "auc_mean": 0.46874999999999994,
+      "auc_absdev_from_half_mean": 0.09263888888888888,
+      "auc_absdev_from_half_p95": 0.21215277777777777,
+      "kde_overlap_mean": 0.7239198012811517
+    },
+    "on_attacker_vs_itself": {
+      "n_per_half": 12,
+      "reps": 50,
+      "ks_stat_mean": 0.32666666666666666,
+      "ks_stat_p95": 0.5458333333333331,
+      "auc_mean": 0.49666666666666665,
+      "auc_absdev_from_half_mean": 0.09722222222222221,
+      "auc_absdev_from_half_p95": 0.2211805555555554,
+      "kde_overlap_mean": 0.6765090335337611
+    }
+  },
+  "salt_cost_ms_attacker_loses_reuse": 2.5860510000370596
+}

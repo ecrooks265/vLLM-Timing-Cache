@@ -1,0 +1,86 @@
+{
+  "source_run": "results/runs/pilot-20261027T022951Z-da3e3ded",
+  "stage": "pilot",
+  "technical_gates": {
+    "complete": true,
+    "no_request_failures": true,
+    "timing_order_valid": true,
+    "kv_counters_observed": true,
+    "evaluation_count_correct": true,
+    "performance_count_correct": true,
+    "manifest_has_no_cross_split_duplicates": true
+  },
+  "pilot_not_final_evidence": true,
+  "metric": "first nonempty streamed content; score=-latency; cached=positive",
+  "bootstrap": "crossed image-ID and repetition resampling; 3 repetitions limit session inference",
+  "detection": {
+    "distinct": {
+      "roc_auc": 1.0,
+      "average_precision": 1.0,
+      "paired_delta_ms": 33.94367599999981,
+      "ci95": {
+        "roc_auc": [
+          1.0,
+          1.0
+        ],
+        "average_precision": [
+          1.0,
+          1.0
+        ],
+        "paired_delta_ms": [
+          32.46587399999612,
+          35.579193000003784
+        ]
+      },
+      "per_rep": [
+        {
+          "rep": 0,
+          "roc_auc": 1.0,
+          "average_precision": 1.0,
+          "paired_delta_ms": 33.94367599999981
+        }
+      ],
+      "calibration_thresholds_ms": {
+        "r0-distinct-attack-p0": 47.926911999994104,
+        "r0-distinct-attack-p1": 46.35242599999856
+      },
+      "tpr": 1.0,
+      "fpr": 0.0,
+      "kv_hits_cached_p50": 16.0,
+      "kv_hits_unseen_p50": 16.0,
+      "evaluation_images": 4,
+      "requests": 8
+    }
+  },
+  "performance": {
+    "distinct": {
+      "role_p50_ms": {
+        "cold": 80.28092050000168,
+        "same_tenant": 47.609325999999896,
+        "cross_tenant": 47.65069649999987
+      },
+      "same_tenant_saving_paired_p50_ms": 32.67159450000179,
+      "cross_tenant_saving_paired_p50_ms": 32.63022400000182,
+      "paired_saving_ci95_ms": {
+        "same_tenant": [
+          32.58837699999617,
+          32.754812000007405
+        ],
+        "cross_tenant": [
+          31.627577000023166,
+          33.63287099998047
+        ]
+      },
+      "per_rep": {
+        "0": {
+          "cold": 80.28092050000168,
+          "same_tenant": 47.609325999999896,
+          "cross_tenant": 47.65069649999987
+        }
+      }
+    }
+  },
+  "timing_calibration": {
+    "median_content_minus_chunk_ms": 0.49381649999702404
+  }
+}

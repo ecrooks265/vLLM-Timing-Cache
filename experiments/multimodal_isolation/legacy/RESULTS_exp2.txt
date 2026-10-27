@@ -1,0 +1,54 @@
+
+========================================================================
+1. IMAGE: identical decoded pixels -> hit; 1-pixel change -> miss
+========================================================================
+id(image)            = 50e2d8176be62b04f51c705a0d725459...
+id(identical decode) = 50e2d8176be62b04f51c705a0d725459...   HIT=True
+id(1-bit pixel flip) = 10e33dd1504e91fbd44f4b951d959cf8...   HIT=False
+avalanche: 59/64 hex chars differ from a single-bit change (~50% expected)
+Reading: the key is exact decoded pixels -> a HIT confirms byte-identical media;
+it does NOT leak a similar/nearby image. Reconstruction via this channel is
+infeasible; CONFIRMING a specific known image was submitted by someone IS feasible.
+
+========================================================================
+1b. Cross-model isolation + EXIF-UUID / explicit-uuid override (real code paths)
+========================================================================
+same image, different model_id -> different id: True
+  => the membership oracle is automatically scoped to ONE model deployment.
+same image, different processor kwarg -> different id: True
+  => any change in processor/tokenization kwargs also changes the id.
+EXIF ImageID UUID path: if img.getexif()[ImageID] is a UUID, vLLM uses that UUID
+INSTEAD of pixels (hasher.py) -> an app can pin identity independent of content;
+and callers may pass explicit mm_uuids to skip content hashing entirely.
+
+========================================================================
+2. AUDIO: same hasher over the audio array + the decode-determinism caveat
+========================================================================
+id(audio)            = 4546b349ba1cd733e7606be193b30aa4...
+id(identical)        HIT=True
+id(+1e-6 one sample) HIT=False   <- sub-perceptual change already misses
+id(float32->float64) HIT=False   <- dtype alone changes the id
+Caveat that decides REAL audio hits: two recordings of 'the same' clip collide only
+if the full decode path (container->PCM, resample rate, channel mix, trim, dtype)
+is byte-identical. exp3 measures whether a re-encode of the same wav still hits;
+this bounds the audio channel's practicality. A bit-exact re-send of the same file
+WILL hit; a re-encode / resample generally will NOT.
+
+========================================================================
+3. How the media id enters the block hash (and why cache_salt closes the channel)
+========================================================================
+generate_block_hash_extra_keys() appends (mm_identifier, offset) for each block
+covering a media placeholder:
+  example extra_key = ('50e2d8176be62b04', 0)
+block_hash = sha256((parent, tokens, extra_keys)) -> the media id is IN the key, so
+cross-user media sharing is the multimodal analogue of prefix sharing.
+Defense (cache_salt): appended to the FIRST block's extra_keys when start_token_idx==0
+(generate_block_hash_extra_keys / kv_cache_utils.py). A per-tenant salt makes even
+identical media hash differently across tenants -> the membership oracle closes.
+exp3 measures the TTFA cost of turning it on.
+
+========================================================================
+done
+========================================================================
+CPU multimodal analysis complete & source-verified. Real TTFA hit/miss timing for
+image & audio: modal_exp3_ttft.py (your own Modal GPU account).

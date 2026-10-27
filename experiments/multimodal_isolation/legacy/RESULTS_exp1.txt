@@ -1,0 +1,70 @@
+
+========================================================================
+A. What determines a cache hit (the mechanism, v0.11.0 default = SHA-256)
+========================================================================
+prompt tokens         : 48  -> full blocks cached: 3 (block_size=16)
+partial trailing block of <16 tokens is never cached (hit resolution = 16 tokens)
+block[0] hash (sha256): d8b8ebc2ca845778dbf4b5b4b84990ba...
+A cache HIT on block k requires: identical parent-chain AND identical 16 tokens
+AND identical extra_keys (LoRA id / mm-hash / cache_salt).
+Note: hit/miss depends ONLY on equality of these keys, NOT on hash strength -> the
+timing side channel exists whether the hash is sha256 or not. Hash strength only
+governs forgery/precompute, analysed in D.
+
+========================================================================
+B. Determinism / cross-process reproducibility (NONE_HASH & PYTHONHASHSEED)
+========================================================================
+PYTHONHASHSEED currently = None
+sha256(probe)  = 75cea37f8553f337ae89bbfd...   (deterministic by construction)
+With sha256 the per-block function is fully deterministic; the ONLY per-process
+randomness is NONE_HASH (the block-0 parent), which is os.urandom(32) unless
+PYTHONHASHSEED is set. Consequences:
+  * within ONE running vLLM process every request hashes consistently -> the
+    timing channel needs no reproducibility and works out of the box.
+  * OFFLINE precomputation of a victim's block hashes needs NONE_HASH, i.e. it
+    only becomes possible if PYTHONHASHSEED is pinned to a known value.
+  * DEFENSE INVERSION: pinning PYTHONHASHSEED (often done for reproducibility)
+    REMOVES the only entropy and makes block-0 hashes predictable across restarts.
+
+========================================================================
+C. Hash-chain property (blast radius of a 1-token change)
+========================================================================
+changed 1 token in block 1 of a 64-token prompt
+blocks identical up to block 0; blocks 1..3 all differ
+  -> shared cached prefix is exactly the unchanged leading blocks; everything
+     after the first differing token misses.
+  This is the structural property the reconstruction attack exploits: a probe
+  can confirm a candidate prefix block-by-block, left to right, 16 tokens at a
+  time (quantified in exp4_reconstruction_sim.py).
+
+========================================================================
+D. Hash strength on v0.11.0: forgery/precompute are NOT feasible on the default
+========================================================================
+Default = SHA-256 (256-bit, second-preimage resistant). To forge a HIT an
+attacker needs a 16-token block that hashes to a target block key: ~2^256 work.
+To precompute a dictionary of secret prefixes they need NONE_HASH (see B).
+So the 'hack the hash' angle is CLOSED on current vLLM. We demonstrate the
+MECHANISM a weak hash would enable only for completeness, at reduced width, and
+label it clearly as NOT applicable to the sha256 default:
+  sha256@24bit (ARTIFICIALLY TRUNCATED): collision after 4,763 tries
+     birthday bound ~2^12=4,096; observed is same order.
+  sha256@32bit (ARTIFICIALLY TRUNCATED): collision after 55,490 tries
+     birthday bound ~2^16=65,536; observed is same order.
+  Honest scope: the FULL 256-bit hash is not brute-forced. The truncated runs only
+  illustrate the birthday mechanism; they say nothing exploitable about the default.
+
+========================================================================
+E. Per-block hash cost: sha256 (default) vs sha256_cbor vs builtin (historical)
+========================================================================
+  sha256(default)     :   1.64 M blocks/s   (   611 ns/block)
+  sha256_cbor         :   0.38 M blocks/s   (  2640 ns/block)
+  builtin(historical) :  10.52 M blocks/s   (    95 ns/block)
+  -> this per-block cost * (#blocks in prefill) is the hashing overhead that a
+     defense adds; it is negligible vs prefill FLOPs, so 'sha256 by default' is
+     essentially free. Feed the delta into the TTFT budget in exp3.
+
+========================================================================
+done
+========================================================================
+CPU experiment complete & source-verified. GPU-dependent TTFT timing + image/audio
+hit measurements: modal_exp3_ttft.py (needs your own Modal GPU account).

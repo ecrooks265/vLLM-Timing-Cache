@@ -1,0 +1,22 @@
+==============================================================================
+EXP3 / END-TO-END LIVE SECRET RECOVERY (TTFT only, no privileged access)
+==============================================================================
+model : Qwen/Qwen2.5-3B-Instruct
+design: HEAD [A] LONG1 [B] LONG2 [C] LONG3; fresh template per trial
+
+Victim prompt = HEAD [A] LONG1 [B] LONG2 [C] LONG3; the attacker knows the fixed
+parts and only that each field is one of V candidates. Each candidate is probed
+EXACTLY ONCE (a second probe would hit the attacker's own cache entry).
+
+  V = 12 candidates/field, 3 fields -> 36 queries per trial
+  naive joint search space = 1728  (48x more queries)
+
+  arm        fields recovered trials fully right median margin    median truth rank
+  SALT_OFF   18/18 (100.0%)   6/6                39.32 ms         1.0 (chance 6.5)
+  SALT_ON    1/18 (5.6%)      0/6                0.44 ms          8.0 (chance 6.5)
+
+READING: the secret is recovered EXACTLY, every trial, from nothing but TTFT; the
+salt-ON control lands at chance. This is the link between exp4's V*n query model
+(over an ideal oracle) and exp3's demonstration that the noisy oracle is reliable.
+==============================================================================
+done

@@ -1,0 +1,45 @@
+
+========================================================================
+A. Low-entropy secret in a shared prefix (templated prompt w/ a k-of-V slot)
+========================================================================
+Model: a system prompt whose blocks are known EXCEPT one token per block drawn
+from a small set of V candidates (e.g. a field the attacker knows the format of).
+  V=   10 candidates/slot, 8 blocks: mean   45.6 queries (<= 80 worst-case) -> LINEAR in V and in #blocks, NOT exponential.
+  V=  100 candidates/slot, 8 blocks: mean  401.2 queries (<= 800 worst-case) -> LINEAR in V and in #blocks, NOT exponential.
+  V= 1000 candidates/slot, 8 blocks: mean 4331.4 queries (<= 8000 worst-case) -> LINEAR in V and in #blocks, NOT exponential.
+
+========================================================================
+B. Why block-chaining makes it linear, not V^blocks (the crucial asymmetry)
+========================================================================
+A naive attacker guessing the whole prefix at once faces V^(#unknowns) space.
+The hash CHAIN lets the oracle confirm each block independently once the prefix
+up to it is fixed, collapsing V^n -> V*n. Demonstration at V=50:
+  naive joint search space  : V^n = 50^6 = 15,625,000,000
+  block-chained oracle cost : 199 queries (success=True)
+  speedup                   : ~78,517,588x
+
+========================================================================
+C. High-entropy secret is safe (the defense the channel already has by accident)
+========================================================================
+If the unknown slot is a full high-entropy token (V ~ vocab = 32000) AND there is
+more than one unknown per block, per-block cost ~ V^(unknowns/block); recovery
+becomes infeasible. The channel only threatens LOW-entropy / templated secrets.
+  1 unknown token(s)/block @ vocab 32000 -> ~32,000 queries/block (cheap)
+  2 unknown token(s)/block @ vocab 32000 -> ~1,024,000,000 queries/block (infeasible)
+  3 unknown token(s)/block @ vocab 32000 -> ~32,768,000,000,000 queries/block (infeasible)
+
+========================================================================
+D. What a defense must do (mapped to vLLM knobs)
+========================================================================
+cache_salt (per tenant/session): the victim's blocks hash differently from the
+  attacker's identical candidates -> EVERY probe MISSES -> oracle destroyed,
+  recovery cost -> infinite. This is the clean fix and exp3 prices its TTFT cost.
+disable cross-request sharing / per-tenant KV pools: same effect, coarser.
+rate-limiting probes: raises query cost linearly; does NOT change the V*n scaling,
+  so it only slows a low-entropy-secret attack, does not stop it.
+
+========================================================================
+done
+========================================================================
+Reconstruction-complexity analysis complete (CPU, exact oracle). Real HIT/MISS
+oracle RELIABILITY under timing noise: modal_exp3_ttft.py (KS / KDE separation).
